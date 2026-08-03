@@ -169,12 +169,52 @@ interface MdtocConfig {
         const id = a.dataset.target;
         if (!id) return;
         const target = document.getElementById(id);
-        target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        // 点击后立刻置 active，不等 IntersectionObserver 回调（更跟手）。
+        if (!target) return;
+        // 跳转期间挂起高亮跟随：平滑滚动会依次掠过中间标题，
+        // 若不挂起，IntersectionObserver 会把这些中间标题逐个置 active，
+        // 导致 TOC 高亮不停跳变、列表也跟着抖动（setActive 会滚 TOC 视区）。
+        suspendHighlightForScroll();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // 点击后立刻置 active（目标标题即当前），不等 observer 回调（更跟手）。
         setActive(id);
       });
     });
   }
+
+  /**
+   * 跳转期间挂起高亮跟随，并在滚动真正结束后恢复。
+   *
+   * 为什么需要：点击 TOC → 正文 smooth 滚动会依次经过中间标题，IntersectionObserver
+   * 会逐个把它们判为「当前可见」并 setActive，TOC 高亮会一路跳变；setActive 又会
+   * scrollIntoView 把 active 项滚进 TOC 视区，TOC 列表也跟着抖动。
+   *
+   * 恢复时机：
+   *   - 首选 `scrollend`（滚动结束即解除，最精准）；
+   *   - 兜底超时 600ms（老 Chromium / 部分场景不触发 scrollend，避免永久挂起）；
+   *   - 忽略「TOC 列表自身滚动」的 scrollend（setActive 滚 TOC 是副作用，不应提前解除）。
+   */
+  let scrollSuspendTimer: number | undefined;
+  let isProgrammaticScroll = false;
+  function suspendHighlightForScroll() {
+    isProgrammaticScroll = true;
+    clearTimeout(scrollSuspendTimer);
+    // 兜底：平滑滚动一般 < 600ms；超时强制恢复，防止 scrollend 未触发时永久挂起。
+    scrollSuspendTimer = setTimeout(() => { isProgrammaticScroll = false; }, 600) as unknown as number;
+  }
+  // 只关心「正文（window/visualViewport）」的滚动结束；
+  // TOC 列表 #mdtoc-list 自身滚动（setActive 触发）的 scrollend 不应解除挂起。
+  const onScrollEnd = () => {
+    if (!isProgrammaticScroll) return;
+    clearTimeout(scrollSuspendTimer);
+    isProgrammaticScroll = false;
+  };
+  window.addEventListener('scrollend', onScrollEnd);
+  window.visualViewport?.addEventListener('scrollend', onScrollEnd);
+  cleaners.push(() => {
+    window.removeEventListener('scrollend', onScrollEnd);
+    window.visualViewport?.removeEventListener('scrollend', onScrollEnd);
+    clearTimeout(scrollSuspendTimer);
+  });
 
   // ---- 5. 滚动高亮（IntersectionObserver） ----
   function observeScroll() {
@@ -185,6 +225,8 @@ interface MdtocConfig {
     }
     observer = new IntersectionObserver(
       (entries) => {
+        // 点击跳转发起的平滑滚动期间，挂起高亮跟随（见 suspendHighlightForScroll）。
+        if (isProgrammaticScroll) return;
         // 收集当前可见标题，取最靠上的作为当前节。
         const visible = entries
           .filter((e) => e.isIntersecting)
