@@ -183,7 +183,73 @@ body.mdtoc-right #mdtoc-fab {
   right: 8px;
 }
 
-/* ========== 6. 滚动条美化（VSCode 风格） ========== */
+/* ========== 6. 空状态（M3） ========== */
+/* 无标题时 toc.ts 会给 #mdtoc-sidebar 加 .mdtoc-empty，显示提示文案。 */
+#mdtoc-list.mdtoc-empty {
+  padding: 16px 12px;
+  color: var(--vscode-descriptionForeground, #9d9d9d);
+  font-size: 0.9em;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* ========== 7. 高对比度主题（forced-colors，M3） ========== */
+/* Windows 高对比度模式下，CSS 变量可能失效，用系统色兜底确保可见。 */
+@media (forced-colors: active) {
+  #mdtoc-sidebar {
+    border-right: 2px solid ButtonText;
+  }
+  body.mdtoc-right #mdtoc-sidebar {
+    border-left: 2px solid ButtonText;
+  }
+  .mdtoc-item.active {
+    border-left: 3px solid Highlight;
+  }
+  #mdtoc-fab {
+    border: 1px solid ButtonText;
+  }
+}
+
+/* ========== 8. 响应式（M3） ========== */
+/* 窄屏（分屏 / 窄预览窗）：固定 260px 边栏会挤压正文 → 改为浮动抽屉。
+   约定：窄屏下正文不再让位（margin 清零），TOC 浮在正文上方（z-index 已 50）。
+   默认折叠（折叠态点 FAB 展开），避免一进来就遮挡正文。 */
+@media (max-width: 720px) {
+  /* 正文回到全宽，TOC 不挤占 */
+  .markdown-body,
+  body > :not(#mdtoc-sidebar):not(style):not(script):not(meta):not(link) {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  /* TOC 变窄 + 投影浮起 */
+  #mdtoc-sidebar {
+    width: 240px;
+    box-shadow: 4px 0 12px rgba(0, 0, 0, 0.3);
+  }
+  body.mdtoc-right #mdtoc-sidebar {
+    box-shadow: -4px 0 12px rgba(0, 0, 0, 0.3);
+  }
+
+  /* 窄屏默认折叠，避免遮挡正文（由 toc.ts 检测 matchMedia 加 class） */
+  body.mdtoc-narrow #mdtoc-sidebar {
+    transform: translateX(-100%);
+  }
+  body.mdtoc-right.mdtoc-narrow #mdtoc-sidebar {
+    transform: translateX(100%);
+  }
+  /* 窄屏折叠时 FAB 显示（沿用 .mdtoc-collapsed 的 FAB 规则会与用户主动折叠混淆，
+     故窄屏走独立 .mdtoc-narrow，FAB 显示也由 toc.ts 显式管控） */
+}
+
+/* 宽屏：限制正文最大宽度，避免单行过长难读 */
+@media (min-width: 1400px) {
+  .markdown-body {
+    max-width: 900px;
+  }
+}
+
+/* ========== 9. 滚动条美化（VSCode 风格） ========== */
 #mdtoc-list::-webkit-scrollbar { width: 8px; }
 #mdtoc-list::-webkit-scrollbar-thumb {
   background: var(--vscode-scrollbarSlider-background);

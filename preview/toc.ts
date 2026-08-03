@@ -65,6 +65,27 @@ interface MdtocConfig {
 
   document.body.prepend(sidebar);
 
+  // ---- 窄屏响应式（matchMedia 驱动） ----
+  // 与 CSS @media(max-width:720px) 配合：窄屏给 body 加 .mdtoc-narrow，
+  // CSS 把 sidebar 浮动并默认滑出（避免遮挡正文）；FAB 提供展开入口。
+  // 用 matchMedia 而非 resize 事件，避免高频回调。
+  const NARROW_QUERY = '(max-width: 720px)';
+  const mql = window.matchMedia(NARROW_QUERY);
+  const applyNarrow = (narrow: boolean) => {
+    document.body.classList.toggle('mdtoc-narrow', narrow);
+    // 窄屏退出时确保 sidebar 不被遗留为「滑出」态（mdtoc-collapsed 由用户/FAB 控制）。
+    if (!narrow) document.body.classList.remove('mdtoc-narrow');
+  };
+  applyNarrow(mql.matches);
+  // addEventListener 兼容老 Webview（Safari 14 前用 addListener）。
+  if (typeof mql.addEventListener === 'function') {
+    mql.addEventListener('change', (e) => applyNarrow(e.matches));
+    cleaners.push(() => mql.removeEventListener('change', (e: MediaQueryListEvent) => applyNarrow(e.matches)));
+  } else if (typeof (mql as any).addListener === 'function') {
+    (mql as any).addListener((e: MediaQueryList) => applyNarrow(e.matches));
+    cleaners.push(() => (mql as any).removeListener((e: MediaQueryList) => applyNarrow(e.matches)));
+  }
+
   // ---- 2. 折叠浮动按钮（FAB） ----
   // sidebar 折叠滑走后点不到，FAB 提供展开入口。
   document.getElementById('mdtoc-fab')?.remove();
@@ -110,20 +131,27 @@ interface MdtocConfig {
     lastSignature = sig;
 
     if (structChanged) {
-      nav.innerHTML = items
-        .map((it) => {
-          const indent = (it.level - cfg.minDepth) * 14;
-          return (
-            `<a class="mdtoc-item level-${it.level}"` +
-            ` data-target="${escapeAttr(it.id)}"` +
-            ` style="padding-left:${12 + indent}px"` +
-            ` title="${escapeAttr(it.text)}"` +
-            `>` +
-            `<span class="mdtoc-text">${escapeHtml(it.text)}</span>` +
-            `</a>`
-          );
-        })
-        .join('');
+      if (items.length === 0) {
+        // 边界：无标题（或全部不在 minDepth..maxDepth 范围）→ 友好空状态。
+        nav.classList.add('mdtoc-empty');
+        nav.textContent = '暂无可跳转的标题';
+      } else {
+        nav.classList.remove('mdtoc-empty');
+        nav.innerHTML = items
+          .map((it) => {
+            const indent = (it.level - cfg.minDepth) * 14;
+            return (
+              `<a class="mdtoc-item level-${it.level}"` +
+              ` data-target="${escapeAttr(it.id)}"` +
+              ` style="padding-left:${12 + indent}px"` +
+              ` title="${escapeAttr(it.text)}"` +
+              `>` +
+              `<span class="mdtoc-text">${escapeHtml(it.text)}</span>` +
+              `</a>`
+            );
+          })
+          .join('');
+      }
       bindClicks();
       // 结构变了，active 状态可能失效，重新应用一次。
       if (currentActive) setActive(currentActive, /*scroll*/ false);
