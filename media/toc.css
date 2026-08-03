@@ -138,7 +138,52 @@ body.mdtoc-right #mdtoc-sidebar {
   display: inline;
 }
 
-/* ========== 4. 滚动条美化（VSCode 风格） ========== */
+/* ========== 4. 折叠态（M2） ========== */
+/* 左侧向左滑出、右侧向右滑出；transform 与 §1 的 transition 配合产生滑动动画。 */
+body.mdtoc-collapsed #mdtoc-sidebar {
+  transform: translateX(-100%);
+}
+body.mdtoc-right.mdtoc-collapsed #mdtoc-sidebar {
+  transform: translateX(100%);
+}
+/* 折叠箭头转一下表示「已收起」。 */
+body.mdtoc-collapsed .mdtoc-fold-btn {
+  transform: rotate(-90deg);
+}
+
+/* ========== 5. 折叠浮动按钮 FAB（M2） ========== */
+/* sidebar 滑走后点不到，FAB 提供展开入口。仅折叠态显示。 */
+#mdtoc-fab {
+  position: fixed;
+  left: 8px;
+  top: 8px;
+  right: auto;
+  z-index: 51;                       /* 高于 sidebar(50)，确保可点 */
+  display: none;                     /* 默认隐藏，折叠态显示 */
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  font-size: 14px;
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+}
+body.mdtoc-collapsed #mdtoc-fab {
+  display: block;
+}
+#mdtoc-fab:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+/* 右侧模式：FAB 显示在右边。 */
+body.mdtoc-right #mdtoc-fab {
+  left: auto;
+  right: 8px;
+}
+
+/* ========== 6. 滚动条美化（VSCode 风格） ========== */
 #mdtoc-list::-webkit-scrollbar { width: 8px; }
 #mdtoc-list::-webkit-scrollbar-thumb {
   background: var(--vscode-scrollbarSlider-background);
