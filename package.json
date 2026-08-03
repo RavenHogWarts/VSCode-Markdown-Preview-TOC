@@ -2,7 +2,7 @@
   "name": "markdown-preview-toc",
   "displayName": "Markdown Preview TOC",
   "description": "在原生 Markdown 预览页面内注入左侧目录边栏，支持点击跳转与滚动高亮。",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "publisher": "RavenHogwarts",
   "license": "GPL-3.0-or-later",
   "repository": { "type": "git", "url": "https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC" },
@@ -37,12 +37,15 @@
     "watch": "node esbuild.mjs --watch",
     "build:prod": "cross-env NODE_ENV=production node esbuild.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "esbuild test/slug.test.ts --bundle --outfile=out/slug.test.js --format=cjs --platform=node && node --test out/slug.test.js",
     "vscode:prepublish": "pnpm run build:prod",
     "package": "vsce package"
   },
   "scriptsInfo": {
     "build": "构建扩展宿主 + 预览脚本两个 bundle（详见 dev/260803/07）",
     "watch": "监听变更增量构建",
+    "typecheck": "TypeScript 类型检查（不产出）",
+    "test": "编译并运行 slug 一致性单元测试（node --test）",
     "package": "打包为 .vsix"
   },
   "devDependencies": {

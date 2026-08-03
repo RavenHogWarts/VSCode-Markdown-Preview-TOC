@@ -7,6 +7,10 @@ src/**
 preview/**
 test/**
 media-build/**
+out/**
+
+# 图标源文件（只发编译后的 media/icon.png）
+media/icon.svg
 
 # 文档与示例（不发版）
 dev/**
@@ -21,5 +25,5 @@ sample/**
 node_modules/**
 
 # 说明：vsce 默认包含「未被忽略的文件」，
-# 因此 dist/extension.js、media/toc.js、media/toc.css、package.json 等会被保留，
+# 因此 dist/extension.js、media/toc.js、media/toc.css、package.json、README.md、CHANGELOG.md、LICENSE、media/icon.png 会被保留，
 # 无需显式 ! 重新包含（避免误把 *.map 一起带回）。

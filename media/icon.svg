@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- Rounded square background, VSCode-blue -->
+  <rect x="6" y="6" width="116" height="116" rx="22" ry="22" fill="#1e6FFF"/>
+  <!-- TOC header line -->
+  <rect x="24" y="26" width="44" height="6" rx="3" fill="#FFFFFF"/>
+  <!-- TOC items, indented to suggest hierarchy -->
+  <rect x="24" y="46" width="80" height="7" rx="3.5" fill="#FFFFFF"/>
+  <rect x="38" y="62" width="62" height="7" rx="3.5" fill="#B3D1FF"/>
+  <rect x="52" y="78" width="50" height="7" rx="3.5" fill="#80B3FF"/>
+  <rect x="24" y="94" width="68" height="7" rx="3.5" fill="#FFFFFF"/>
+</svg>
