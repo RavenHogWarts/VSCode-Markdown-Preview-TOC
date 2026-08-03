@@ -1,0 +1,5 @@
+/* media/toc.css
+ * 预览样式注入（markdown.previewStyles）。
+ * M0 阶段：空文件占位，仅保证 package.json 的 previewStyles 引用有效。
+ * 双栏布局 / TOC 样式 / 主题适配将在 M1+ 实现，见 dev/260803/05-styling-and-layout.md。
+ */

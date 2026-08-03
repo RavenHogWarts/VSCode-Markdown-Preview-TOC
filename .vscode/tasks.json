@@ -1,0 +1,9 @@
+[
+  {
+    "label": "pnpm: build",
+    "type": "shell",
+    "command": "pnpm run build",
+    "isBackground": true,
+    "problemMatcher": []
+  }
+]

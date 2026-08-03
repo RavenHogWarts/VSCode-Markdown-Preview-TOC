@@ -1,0 +1,13 @@
+[
+  {
+    "name": "Run Extension",
+    "type": "extensionHost",
+    "request": "launch",
+    "args": [
+      "--extensionDevelopmentPath=${workspaceFolder}",
+      "--folderUri=file:///E:/WorkSpace/Vscode/vscode-markdown-preview-toc/sample"
+    ],
+    "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+    "preLaunchTask": "pnpm: build"
+  }
+]

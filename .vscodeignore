@@ -1,0 +1,25 @@
+# 源码与构建配置
+**/*.ts
+**/*.map
+tsconfig*.json
+esbuild.mjs
+src/**
+preview/**
+test/**
+media-build/**
+
+# 文档与示例（不发版）
+dev/**
+sample/**
+
+# 杂项
+.gitignore
+.vscode/**
+.github/**
+
+# 依赖
+node_modules/**
+
+# 说明：vsce 默认包含「未被忽略的文件」，
+# 因此 dist/extension.js、media/toc.js、media/toc.css、package.json 等会被保留，
+# 无需显式 ! 重新包含（避免误把 *.map 一起带回）。

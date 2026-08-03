@@ -1,0 +1,56 @@
+{
+  "name": "markdown-preview-toc",
+  "displayName": "Markdown Preview TOC",
+  "description": "在原生 Markdown 预览页面内注入左侧目录边栏，支持点击跳转与滚动高亮。",
+  "version": "0.1.0",
+  "publisher": "RavenHogwarts",
+  "license": "GPL-3.0-or-later",
+  "repository": { "type": "git", "url": "https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC" },
+  "engines": { "vscode": "^1.85.0", "node": ">=18" },
+  "packageManager": "pnpm@9.15.0",
+  "extensionKind": ["ui", "workspace"],
+  "categories": ["Other"],
+  "keywords": ["markdown", "toc", "outline", "preview", "sidebar"],
+  "main": "./dist/extension.js",
+  "icon": "media/icon.png",
+  "activationEvents": [],
+  "contributes": {
+    "markdown.previewStyles": ["./media/toc.css"],
+    "markdown.previewScripts": ["./media/toc.js"],
+    "markdown.markdownItPlugins": true,
+    "configuration": {
+      "title": "Markdown Preview TOC",
+      "properties": {
+        "markdownToc.enabled": { "type": "boolean", "default": true, "markdownDescription": "是否在预览中显示 TOC 边栏。" },
+        "markdownToc.sidebarWidth": { "type": "number", "default": 260, "minimum": 180, "maximum": 480, "markdownDescription": "TOC 边栏宽度（像素）。" },
+        "markdownToc.sidebarPosition": { "type": "string", "enum": ["left", "right"], "default": "left", "enumDescriptions": ["左侧（默认）", "右侧"], "markdownDescription": "TOC 边栏位置：左侧或右侧。修改后自动刷新预览。" },
+        "markdownToc.defaultCollapsed": { "type": "boolean", "default": false, "markdownDescription": "打开预览时 TOC 是否默认收起。" },
+        "markdownToc.maxDepth": { "type": "number", "default": 6, "minimum": 1, "maximum": 6, "markdownDescription": "解析标题的最大层级。" },
+        "markdownToc.minDepth": { "type": "number", "default": 2, "minimum": 1, "maximum": 6, "markdownDescription": "最小层级。默认 2 隐藏 h1。" },
+        "markdownToc.highlightOnScroll": { "type": "boolean", "default": true, "markdownDescription": "滚动时高亮对应标题。" },
+        "markdownToc.autoExpandDepth": { "type": "number", "default": 3, "minimum": 0, "maximum": 6, "markdownDescription": "自动展开到第 N 层。" }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "build:prod": "cross-env NODE_ENV=production node esbuild.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "vscode:prepublish": "pnpm run build:prod",
+    "package": "vsce package"
+  },
+  "scriptsInfo": {
+    "build": "构建扩展宿主 + 预览脚本两个 bundle（详见 dev/260803/07）",
+    "watch": "监听变更增量构建",
+    "package": "打包为 .vsix"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.27.0",
+    "cross-env": "^7.0.3",
+    "esbuild": "^0.21.0",
+    "typescript": "^5.4.0"
+  }
+}

@@ -1,0 +1,18 @@
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+media-build/
+media/toc.js
+media/toc.js.map
+out/
+
+# 打包产物
+*.vsix
+
+# 测试运行器
+.vscode-test/
+
+# 开发文档
+dev
