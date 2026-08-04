@@ -177,6 +177,21 @@ body.mdtoc-collapsed #mdtoc-fab {
 #mdtoc-fab:hover {
   background: var(--vscode-button-hoverBackground);
 }
+/* FAB 内层：React 经 createPortal 把 <Fab> 渲染进 #mdtoc-fab 容器，内层撑满并居中图标。
+   role/tabindex/键盘交互都在内层（见 preview/components/Fab.tsx）。 */
+.mdtoc-fab-inner {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+  outline: none;
+}
+.mdtoc-fab-inner:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: -1px;
+}
 /* 右侧模式：FAB 显示在右边。 */
 body.mdtoc-right #mdtoc-fab {
   left: auto;

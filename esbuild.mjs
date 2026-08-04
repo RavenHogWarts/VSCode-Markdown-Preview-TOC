@@ -22,13 +22,18 @@ const targets = [
     minify,
   },
   {
-    entryPoints: ['preview/toc.ts'],
+    entryPoints: ['preview/toc.tsx'],
     outfile: 'media/toc.js',
     bundle: true,
     format: 'iife',
     platform: 'browser',
     target: ['es2022'],
-    sourcemap: !minify, // 开发期开 sourcemap，方便 DevTools 对应 toc.ts
+    jsx: 'automatic', // React 17+ 自动运行时：JSX 免手动 import React
+    // React 源码含 `process.env.NODE_ENV` 分支；浏览器无 process，构建期必须替换，
+    // 否则运行时 ReferenceError: process is not defined。
+    // 生产走 'production'（精简 + 去 dev 警告，体积更小）；开发保留警告便于 DevTools 调试。
+    define: { 'process.env.NODE_ENV': JSON.stringify(minify ? 'production' : 'development') },
+    sourcemap: !minify, // 开发期开 sourcemap，方便 DevTools 对应 tsx 源码
     minify,
   },
 ];
