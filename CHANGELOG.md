@@ -6,6 +6,20 @@
 
 ---
 
+## [1.1.0](https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC/compare/v1.0.1...v1.1.0) (2026-08-04)
+
+
+### Features
+
+* TOC 风格变体 ([ef20dae](https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC/commit/ef20daec6fdffe19c0a96753cf0e3ad23674c3d4))
+* 双层状态基础设施 + 工具栏 ([f8caf39](https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC/commit/f8caf39d3aa1ed29fc28402e2def33e2e8ab76c0))
+* 子树折叠 + autoExpandDepth 落地 ([fb80ccc](https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC/commit/fb80cccba128d71494317b3640758a5f34839734))
+
+
+### Performance Improvements
+
+* 使用 react 框架替换当前实现 ([ba0f5c5](https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC/commit/ba0f5c53df07da4b48e95a88fe80671320911107))
+
 ## [1.0.1](https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC/compare/v1.0.0...v1.0.1) (2026-08-04)
 
 
