@@ -12,12 +12,6 @@
 
 </div>
 
-<!-- 📷 截图占位：把顶部演示动图命名为 media/preview-hero.gif 后删除本注释。
-     建议内容：一个长 .md 文档预览，展示「点击 TOC → 平滑跳转 + 滚动高亮跟随」的完整动线。 -->
-<p align="center">
-  <img src="media/preview-hero.gif" alt="Markdown Preview TOC 演示" width="880" />
-</p>
-
 ---
 
 ## ✨ 功能
@@ -51,7 +45,6 @@
 
 ## 🎬 效果展示
 
-<!-- 📷 截图占位：media/preview-highlight.gif —— 滚动正文时 TOC 高亮项随当前可见标题切换，并自动滚入 TOC 视区。 -->
 <p align="center">
   <img src="docs/preview-highlight.gif" alt="滚动高亮演示" width="880" />
 </p>
@@ -60,7 +53,6 @@
 
 ---
 
-<!-- 📷 截图占位：media/preview-collapse.gif —— 点击父项折叠子树、点击头部整体收起后浮出 ☰ FAB、再点开。 -->
 <p align="center">
   <img src="docs/preview-collapse.gif" alt="折叠与展开演示" width="880" />
 </p>
@@ -71,7 +63,6 @@
 
 ### 三种视觉风格
 
-<!-- 📷 截图占位：media/preview-styles.gif —— 同一文档在 indented / pill / starlight 三种风格间切换（工具栏按钮）。 -->
 <p align="center">
   <img src="docs/preview-styles.gif" alt="三种视觉风格切换" width="880" />
 </p>
