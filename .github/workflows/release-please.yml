@@ -1,0 +1,39 @@
+name: Release Please
+
+# 自动化版本号 + CHANGELOG。详见 dev/260803/08 §8。
+#
+# 工作流：
+#   1. 你正常提交（遵循 Conventional Commits：feat/fix/chore/docs/...）→ push master。
+#   2. 本 Action 累积 feat/fix/perf commit → 自动开/更新「Release PR」：
+#        - 改 package.json 的 version
+#        - 追加 CHANGELOG.md 新版本段（按 changelog-sections 归类）
+#   3. 你 review 该 PR → Merge → 本 Action 自动打 tag vX.Y.Z + 创建 GitHub Release。
+#   4. Release 创建后触发 release.yml（on: release published）→ 构建 .vsix 附加到该 Release。
+#
+# 版本号规则：
+#   - feat      → minor（1.1.0 → 1.2.0）
+#   - fix       → patch（1.1.0 → 1.1.1）
+#   - feat! / BREAKING CHANGE → major（1.1.0 → 2.0.0）
+#   - chore/docs/refactor/style/test/build/ci → 不触发版本（仅 feat/fix/perf/breaking 触发）
+#
+# 强制版本号（逃生舱）：加一条带 footer 的空 commit
+#   git commit --allow-empty -m "chore: 指定发版版本" -m "Release-As: 2.0.0"
+#   下次 Release PR 就精确用该版本。
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: write     # 创建 tag / Release
+  pull-requests: write # 开 Release PR
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          release-type: node
+          # 读取仓库根的 release-please-config.json（含 changelog-sections 配置）
+          config-file: release-please-config.json

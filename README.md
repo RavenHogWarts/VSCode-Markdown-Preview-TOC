@@ -34,9 +34,15 @@
 
 ## 🚀 使用
 
-1. 安装本扩展。
-2. 打开任意 `.md` 文件，按 `Ctrl+Shift+V`（macOS：`Cmd+Shift+V`）打开预览。
-3. 预览左侧自动出现 TOC。
+### 安装
+
+- **方式一（推荐）**：在 VSCode 扩展面板搜索 **Markdown Preview TOC** 安装（已发布到 [Marketplace](https://marketplace.visualstudio.com/)）。
+- **方式二**：从 [GitHub Releases](https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC/releases) 下载 `.vsix`，执行 `code --install-extension markdown-preview-toc-<版本>.vsix`，或扩展面板 → `...` → **Install from VSIX...**。
+
+### 使用
+
+1. 打开任意 `.md` 文件，按 `Ctrl+Shift+V`（macOS：`Cmd+Shift+V`）打开预览。
+2. 预览左侧自动出现 TOC。
 
 > 没看到 TOC？确认是「预览」而非源码编辑器；检查 `markdownToc.enabled` 是否为 `true`；文档需含标题。
 
@@ -46,16 +52,16 @@
 
 在 `settings.json` 中修改（改后预览**自动刷新**生效）：
 
-| 配置项 | 类型 | 默认 | 说明 |
-|--------|------|------|------|
-| `markdownToc.enabled` | boolean | `true` | 是否在预览中显示 TOC 边栏 |
-| `markdownToc.sidebarWidth` | number | `260` | 边栏宽度（像素，180–480） |
-| `markdownToc.sidebarPosition` | `"left"` \| `"right"` | `"left"` | 边栏位置 |
-| `markdownToc.defaultCollapsed` | boolean | `false` | 打开预览时是否默认收起 |
-| `markdownToc.minDepth` | number | `2` | 最小层级（默认 2 隐藏 h1，1–6） |
-| `markdownToc.maxDepth` | number | `6` | 最大层级（1–6） |
-| `markdownToc.highlightOnScroll` | boolean | `true` | 滚动时高亮对应标题 |
-| `markdownToc.autoExpandDepth` | number | `3` | 自动展开到第 N 层（0–6） |
+| 配置项                          | 类型                  | 默认     | 说明                            |
+| ------------------------------- | --------------------- | -------- | ------------------------------- |
+| `markdownToc.enabled`           | boolean               | `true`   | 是否在预览中显示 TOC 边栏       |
+| `markdownToc.sidebarWidth`      | number                | `260`    | 边栏宽度（像素，180–480）       |
+| `markdownToc.sidebarPosition`   | `"left"` \| `"right"` | `"left"` | 边栏位置                        |
+| `markdownToc.defaultCollapsed`  | boolean               | `false`  | 打开预览时是否默认收起          |
+| `markdownToc.minDepth`          | number                | `2`      | 最小层级（默认 2 隐藏 h1，1–6） |
+| `markdownToc.maxDepth`          | number                | `6`      | 最大层级（1–6）                 |
+| `markdownToc.highlightOnScroll` | boolean               | `true`   | 滚动时高亮对应标题              |
+| `markdownToc.autoExpandDepth`   | number                | `3`      | 自动展开到第 N 层（0–6）        |
 
 示例：
 

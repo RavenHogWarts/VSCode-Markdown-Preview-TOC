@@ -1,25 +1,37 @@
 name: Release
 
+# 当 release-please 创建 GitHub Release（合并 Release PR 后自动发生）时，
+# 本 workflow 被触发：构建并打包 .vsix，附加到该 Release。
+#
+# 触发链：
+#   合并 Release PR → release-please 打 tag + 创建 Release（published）
+#                   → 触发本 workflow → 构建 .vsix → 附加到该 Release
+#
+# 之后由维护者手动：从 Release 下载 .vsix → VSCode Marketplace 后台上传。
+# CI 本身不发布 Marketplace。
+
 on:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types: [published]
+
+permissions:
+  contents: write   # softprops/action-gh-release 上传资源到 Release 需要
 
 jobs:
-  release:
+  build-and-attach:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup pnpm
+        # 从 package.json 的 packageManager (pnpm@9.15.0) 读取版本，
+        # 不要在此再指定 version，否则与 packageManager 冲突报错。
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
 
       - name: Install
@@ -34,5 +46,13 @@ jobs:
       - name: Build (prod)
         run: pnpm run build:prod
 
-      - name: Publish to Marketplace
-        run: pnpm exec vsce publish --no-git-tag-version --pat ${{ secrets.VSCE_PAT }}
+      - name: Package VSIX
+        run: pnpm run package
+
+      - name: Attach VSIX to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          # 精确指向触发本次 workflow 的那个 Release（release-please 刚创建的）
+          tag_name: ${{ github.event.release.tag_name }}
+          # 把打包出来的 .vsix 作为该 Release 的资源
+          files: '*.vsix'
