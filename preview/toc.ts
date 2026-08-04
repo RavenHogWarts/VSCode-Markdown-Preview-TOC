@@ -105,6 +105,12 @@ interface MdtocConfig {
   let lastSignature = '';
   let observer: IntersectionObserver | null = null;
   let currentActive: string | null = null;
+  // 全局可见标题集合：IntersectionObserver 回调只含「本帧状态变化」的标题，
+  // 不含「仍在活跃区但没变化」的标题。若直接从 entries 取最上方项，会跳过
+  // 仍在可见区、只是没变化的中间标题（如 active=2.1 时，2.2/2.3 仍可见但不在
+  // entries，新进入的 3.3 会被误判为「最上方」→ active 直接跳到 3.3，漏掉 2.2/2.3）。
+  // 解法：维护全局可见集合，按变化增删，再从 items（文档顺序）取第一个可见项。
+  const visibleIds = new Set<string>();
 
   function rebuild() {
     const headings = Array.from(
@@ -219,27 +225,49 @@ interface MdtocConfig {
   // ---- 5. 滚动高亮（IntersectionObserver） ----
   function observeScroll() {
     observer?.disconnect();
+    // 重建 observer 时可见集合失效（旧目标已脱离文档），清空避免脏数据。
+    visibleIds.clear();
     if (!cfg.highlightOnScroll || items.length === 0) {
       observer = null;
       return;
     }
     observer = new IntersectionObserver(
       (entries) => {
+        // 按「本帧变化」增删全局可见集合：进入的加入，离开的移除。
+        // 注意：即使点击跳转期间 isProgrammaticScroll=true（挂起 setActive 跟随），
+        // 这里仍要维护 visibleIds，否则挂起期间离开/进入的标题状态丢失，
+        // 解除挂起后取到的「最上方可见项」会基于过时集合。
+        for (const e of entries) {
+          const id = (e.target as HTMLElement).id;
+          if (e.isIntersecting) visibleIds.add(id);
+          else visibleIds.delete(id);
+        }
         // 点击跳转发起的平滑滚动期间，挂起高亮跟随（见 suspendHighlightForScroll）。
         if (isProgrammaticScroll) return;
-        // 收集当前可见标题，取最靠上的作为当前节。
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .map((e) => ({ el: e.target as HTMLElement, top: e.boundingClientRect.top }))
-          .sort((a, b) => a.top - b.top);
-        if (visible.length === 0) return;
-        const topId = visible[0].el.id;
-        if (topId !== currentActive) setActive(topId);
+        setActiveFromVisible();
       },
       // 底部 70% 不算，标题进入视口顶部 30% 才算「当前在看的」。
       { rootMargin: '0px 0px -70% 0px', threshold: 0 }
     );
     items.forEach((it) => observer!.observe(it.el));
+  }
+
+  /**
+   * 从全局可见集合中取「文档顺序最靠上」的标题作为 active。
+   *
+   * 关键修正：不能只看 IntersectionObserver 本帧的 entries（它只含状态变化的标题），
+   * 否则当中间标题仍在可见区但本帧没变化时，新进入的更靠后标题会被误判为最上方
+   * （如 active=2.1、2.2/2.3 仍可见但不在 entries、3.3 新进入 → 误判 3.3）。
+   * 这里遍历 items（文档顺序），第一个在 visibleIds 里的即是最上方可见标题。
+   */
+  function setActiveFromVisible() {
+    if (visibleIds.size === 0) return;
+    for (const it of items) {
+      if (visibleIds.has(it.id)) {
+        if (it.id !== currentActive) setActive(it.id);
+        return;
+      }
+    }
   }
 
   /** 设置 active 高亮；scroll=true 时把 active 项滚进 TOC 视区。 */
