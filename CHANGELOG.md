@@ -6,6 +6,22 @@
 
 ---
 
+## 1.0.0 (2026-08-04)
+
+
+### Features
+
+* 完成插件框架 ([5bfa8ba](https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC/commit/5bfa8ba1d2a25af9b93dbabc8e6e897f36d5d9f7))
+* 完成核心 TOC ([174bb5d](https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC/commit/174bb5d48faea33768e14d1c9653f3e1d795c28a))
+* 测试、文档、发布 ([f5dc171](https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC/commit/f5dc171796315d4cd53ad67817772dd3bbecddff))
+* 滚动高亮 + 折叠 ([66828d3](https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC/commit/66828d3208677627a27bb58cbbf7068380092879))
+* 配置 + 主题 + 响应式 + 左右位置 ([22b5f66](https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC/commit/22b5f669c99bd6c8ad11eef5e5cfa3220e797baf))
+
+
+### Bug Fixes
+
+* TOC 列表抖动 ([810773d](https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC/commit/810773dc2289cda9a962a3fca659bede70866d8a))
+
 ## [1.0.0] — 2026-08-04
 
 首次发布。
