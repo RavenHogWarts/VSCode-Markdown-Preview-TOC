@@ -6,6 +6,13 @@
 
 ---
 
+## [1.1.1](https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC/compare/v1.1.0...v1.1.1) (2026-08-04)
+
+
+### Bug Fixes
+
+* docs 中文件错误的打包进了 vsix ([fd3eaeb](https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC/commit/fd3eaebb2686068277ff22d5f6576f7b74bd6014))
+
 ## [1.1.0](https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC/compare/v1.0.1...v1.1.0) (2026-08-04)
 
 

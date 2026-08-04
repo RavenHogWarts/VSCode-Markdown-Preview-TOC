@@ -2,7 +2,7 @@
   "name": "markdown-preview-toc",
   "displayName": "Markdown Preview TOC",
   "description": "在原生 Markdown 预览页面内注入左侧目录边栏，支持点击跳转与滚动高亮。",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "publisher": "RavenHogwarts",
   "license": "GPL-3.0-or-later",
   "repository": {
