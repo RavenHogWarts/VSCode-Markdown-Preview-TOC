@@ -9,7 +9,10 @@
 // v2-M1（dev/260804/01 + 06 §4）：双层状态模型落地——
 //   position / collapsed 的真相源从「cfg 直写 body class」迁为 useOverrideState
 //   （localStorage 即时层 > <meta> 配置默认层），body class 降级为派生副作用。
-//   工具栏（Toolbar）承载左右切换 / 整栏折叠 / 全部展开收起(M2 消费) / 回到顶部。
+//   工具栏（Toolbar）承载左右切换 / 整栏折叠 / 全部展开收起 / 回到顶部。
+// v2-M2（dev/260804/03 + 06 §5）：子树折叠——useCollapsedNodes 管理折叠集
+//   （autoExpandDepth 在此激活）+ active 祖先链手风琴跟随，显隐由 TocList 纯函数推导；
+//   工具栏「全部展开/收起」从 M1 的哨兵 no-op 接上真实现。
 
 import { useCallback, useLayoutEffect } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -18,8 +21,8 @@ import { createPortal } from 'react-dom';
 import { useConfig } from './hooks/useConfig';
 import { useMediaQuery } from './hooks/useMediaQuery';
 import { useOverrideState, type OverrideCodec } from './hooks/useOverrideState';
+import { useCollapsedNodes } from './hooks/useCollapsedNodes';
 import { useToc } from './hooks/useToc';
-import { lsSet } from './lib/storage';
 import { Header } from './components/Header';
 import { Toolbar } from './components/Toolbar';
 import { TocList } from './components/TocList';
@@ -49,6 +52,15 @@ function App({ fabHost }: { fabHost: HTMLElement }) {
   const cfg = useConfig();
   const narrow = useMediaQuery(NARROW_QUERY);
   const { items, activeId, jump } = useToc(cfg);
+
+  // 子树折叠（M2）：折叠集三态管理 + autoExpandDepth 激活 + 手风琴跟随——
+  // activeId 的祖先链作为会话 overlay 从折叠集减除：全部折叠时滚动正文，
+  // 只展开当前在读的子树，active 移走后自动回收（详见 useCollapsedNodes 头注释）。
+  const { collapsedIds, isAuto, toggleNode, setAllNodes } = useCollapsedNodes(
+    items,
+    cfg.autoExpandDepth,
+    activeId
+  );
 
   // 双层状态：localStorage（工具栏即时层）> cfg（配置默认层）。
   // setter 同步写 localStorage（跨刷新记忆），body class 在下方 effect 派生。
@@ -100,12 +112,6 @@ function App({ fabHost }: { fabHost: HTMLElement }) {
   const toggleCollapsed = () => setCollapsed(!collapsed);
   const expand = () => setCollapsed(false);
 
-  // 全部展开/收起：M1 仅写入哨兵值供 03（子树折叠）落地时直接消费——
-  // '__all__' = 全部收起、'[]' = 无折叠。当前 TOC 是扁平列表，点击无可见变化（预期）。
-  const setAllNodes = useCallback((collapse: boolean) => {
-    lsSet('collapsedNodes', collapse ? '__all__' : '[]');
-  }, []);
-
   const backToTop = useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
@@ -127,7 +133,11 @@ function App({ fabHost }: { fabHost: HTMLElement }) {
         activeId={activeId}
         minDepth={cfg.minDepth}
         enabled={cfg.enabled}
+        collapsedIds={collapsedIds}
+        // 空态提示仅在「配置全收起且用户从未手动操作」时出现（03 §6.3）。
+        showCollapseHint={isAuto && cfg.autoExpandDepth <= 0}
         onJump={jump}
+        onToggleNode={toggleNode}
       />
       {/* FAB 是 body 下的独立浮层（折叠态才显示），用 portal 渲染进 #mdtoc-fab 容器 */}
       {createPortal(<Fab onExpand={expand} />, fabHost)}

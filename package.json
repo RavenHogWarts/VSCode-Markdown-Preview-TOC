@@ -106,7 +106,7 @@
     "watch": "node esbuild.mjs --watch",
     "build:prod": "cross-env NODE_ENV=production node esbuild.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "esbuild test/slug.test.ts --bundle --outfile=out/slug.test.js --format=cjs --platform=node && node --test out/slug.test.js",
+    "test": "node test.mjs",
     "vscode:prepublish": "pnpm run build:prod",
     "package": "vsce package"
   },
@@ -114,7 +114,7 @@
     "build": "构建扩展宿主 + 预览脚本两个 bundle（详见 dev/260803/07）",
     "watch": "监听变更增量构建",
     "typecheck": "TypeScript 类型检查（不产出）",
-    "test": "编译并运行 slug 一致性单元测试（node --test）",
+    "test": "自动发现并运行 test/*.test.ts（test.mjs：esbuild 编译 → node --test，新增测试零配置）",
     "package": "打包为 .vsix"
   },
   "devDependencies": {

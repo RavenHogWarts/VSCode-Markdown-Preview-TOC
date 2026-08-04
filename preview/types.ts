@@ -24,4 +24,6 @@ export interface TocItem {
   id: string;    // 标题原生 id（githubSlugifier 生成）
   text: string;  // 标题纯文本
   level: number; // 1-6
+  /** 其后紧邻存在 level 更大的项（= 可折叠父项）。由 lib/tree.ts markTree 在 rebuild 时标记。 */
+  hasChildren: boolean;
 }

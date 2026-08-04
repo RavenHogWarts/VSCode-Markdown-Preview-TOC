@@ -208,6 +208,45 @@ body.mdtoc-right #mdtoc-sidebar {
   display: inline;
 }
 
+/* ---- 3.1 子树折叠（v2-M2，dev/260804/03） ---- */
+/* 父项前置 toggle（▸/▾ 的 lucide 图标由 React 渲染）；叶子项用 .mdtoc-toggle-spacer
+   同宽占位对齐文本左缘。被折叠隐藏的项不渲染（React 端 deriveHidden），无需 .mdtoc-hidden。 */
+.mdtoc-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  margin-right: 2px;
+  vertical-align: -2px;
+  flex-shrink: 0;
+  cursor: pointer;
+  color: var(--vscode-descriptionForeground, #9d9d9d);
+  border-radius: 3px;
+  user-select: none;
+}
+.mdtoc-toggle:hover {
+  color: var(--vscode-foreground, #cccccc);
+  background: var(--vscode-toolbar-hoverBackground, rgba(90, 93, 94, 0.31));
+}
+.mdtoc-toggle:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: -1px;
+}
+.mdtoc-toggle-spacer {
+  cursor: inherit;
+  pointer-events: none;
+}
+
+/* autoExpandDepth=0 全收起时的空态提示（03 §6.3） */
+.mdtoc-hint {
+  padding: 10px 12px;
+  color: var(--vscode-descriptionForeground, #9d9d9d);
+  font-size: 0.85em;
+  line-height: 1.5;
+  text-align: center;
+}
+
 /* ========== 4. 折叠态（M2） ========== */
 /* 左侧向左滑出、右侧向右滑出；transform 与 §1 的 transition 配合产生滑动动画。 */
 body.mdtoc-collapsed #mdtoc-sidebar {

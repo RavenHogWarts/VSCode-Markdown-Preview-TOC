@@ -14,6 +14,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { MdtocConfig, TocItem } from '../types';
+import { markTree } from '../lib/tree';
 
 interface UseTocResult {
   items: TocItem[];
@@ -104,11 +105,14 @@ export function useToc(cfg: MdtocConfig): UseTocResult {
         id: h.id,
         text: h.textContent || '(无标题)',
         level: Number(h.tagName.slice(1)),
+        hasChildren: false,
       }));
+      markTree(next); // 标记可折叠父项（v2-M2 子树折叠用，O(n) 单遍栈）
       itemsRef.current = next;
 
       // 签名短路：仅在标题集合（层级/id/文本）变化时才 setItems，避免无谓重渲染。
       // React 的 keyed diff 会进一步把 DOM patch 降到最小；此处短路是「连 setState 都省」。
+      // hasChildren 由 level 序列唯一决定，签名含 level 即已覆盖，无需单独入签。
       const sig = next.map((it) => `${it.level}:${it.id}:${it.text}`).join('|');
       if (sig !== lastSig.current) {
         lastSig.current = sig;
