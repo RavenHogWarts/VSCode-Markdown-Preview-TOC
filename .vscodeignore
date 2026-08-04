@@ -13,6 +13,7 @@ out/**
 media/icon.svg
 
 # 文档与示例（不发版）
+docs/**
 dev/**
 sample/**
 

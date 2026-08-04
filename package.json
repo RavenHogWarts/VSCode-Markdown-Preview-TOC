@@ -123,14 +123,14 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node test.mjs",
     "vscode:prepublish": "pnpm run build:prod",
-    "package": "vsce package"
+    "package": "node -e \"require('fs').mkdirSync('dist',{recursive:true})\" && vsce package --out dist"
   },
   "scriptsInfo": {
     "build": "构建扩展宿主 + 预览脚本两个 bundle（详见 dev/260803/07）",
     "watch": "监听变更增量构建",
     "typecheck": "TypeScript 类型检查（不产出）",
     "test": "自动发现并运行 test/*.test.ts（test.mjs：esbuild 编译 → node --test，新增测试零配置）",
-    "package": "打包为 .vsix"
+    "package": "打包为 .vsix 并输出到 dist/ 目录"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
