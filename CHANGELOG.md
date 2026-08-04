@@ -6,6 +6,13 @@
 
 ---
 
+## [1.0.1](https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC/compare/v1.0.0...v1.0.1) (2026-08-04)
+
+
+### Bug Fixes
+
+* 滚动高亮跟随 ([6e62020](https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC/commit/6e62020835f81be989ce95cbae4e186430f03500))
+
 ## 1.0.0 (2026-08-04)
 
 
