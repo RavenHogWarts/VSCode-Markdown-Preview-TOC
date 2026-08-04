@@ -26,6 +26,9 @@ await esbuild.build({
   platform: 'node',
 });
 
-// node --test 对目录自动发现 *.test.js（Node 18+ 内置 test runner）。
-const { status } = spawnSync(process.execPath, ['--test', 'out'], { stdio: 'inherit' });
+// node --test 直接喂编译产物清单（由上面的自动发现推得）。
+// 不用「--test out」目录发现 / glob：目录参数在部分 Node 版本上按模块解析直接报错，
+// 显式文件列表在 18/20/22 上行为一致、最稳。
+const outFiles = entryPoints.map((p) => `out/${p.slice('test/'.length).replace(/\.ts$/, '.js')}`);
+const { status } = spawnSync(process.execPath, ['--test', ...outFiles], { stdio: 'inherit' });
 process.exit(status ?? 1);

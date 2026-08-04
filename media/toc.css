@@ -156,6 +156,12 @@ body.mdtoc-right #mdtoc-sidebar {
   }
   #mdtoc-header {
     justify-content: flex-end;
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+  /* 7 按钮 + 分隔符在 180px 最小宽度下放不下：紧凑模式去分隔符省空间 */
+  .mdtoc-tsep {
+    display: none;
   }
 }
 #mdtoc-sidebar.mdtoc-compact .mdtoc-title {
@@ -163,6 +169,11 @@ body.mdtoc-right #mdtoc-sidebar {
 }
 #mdtoc-sidebar.mdtoc-compact #mdtoc-header {
   justify-content: flex-end;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+#mdtoc-sidebar.mdtoc-compact .mdtoc-tsep {
+  display: none;
 }
 
 /* ========== 3. 列表 ========== */
@@ -171,11 +182,13 @@ body.mdtoc-right #mdtoc-sidebar {
   overflow-y: auto;
   overflow-x: hidden;
   padding: 6px 0;
+  /* starlight 轨道线 SVG（.mdtoc-rail）以本容器为定位基准。 */
+  position: relative;
 }
 
 .mdtoc-item {
   display: block;
-  padding: 4px 12px;
+  padding: 6px 12px;
   color: var(--vscode-foreground, #cccccc);
   text-decoration: none;
   cursor: pointer;
@@ -183,26 +196,30 @@ body.mdtoc-right #mdtoc-sidebar {
   overflow: hidden;
   text-overflow: ellipsis;
   border-left: 2px solid transparent;
-  transition: background 0.1s, color 0.1s;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 .mdtoc-item:hover {
   background: var(--vscode-list-hoverBackground);
-  color: var(--vscode-list-hoverForeground);
 }
-/* active 态：M2 滚动高亮会切换该 class，此处先声明不影响 M1。 */
+/* active 态：统一使用文档站主色（vscode-textLink-foreground），背景只做 hover 用。 */
 .mdtoc-item.active {
-  background: var(--vscode-list-activeSelectionBackground);
-  color: var(--vscode-list-activeSelectionForeground);
-  border-left-color: var(--vscode-list-activeSelectionForeground);
+  color: var(--vscode-textLink-foreground, #3794ff);
+  border-left-color: var(--vscode-textLink-foreground, #3794ff);
   font-weight: 500;
 }
+/* 当前 active 项的祖先：使用主色 but 降低饱和度，帮助识别阅读路径。 */
+.mdtoc-item.ancestor {
+  color: var(--vscode-textLink-foreground, #3794ff);
+  opacity: 0.78;
+}
 
-/* 层级视觉 */
+/* 层级视觉：越深越淡，形成清晰的阶梯节奏。 */
 .mdtoc-item.level-1 { font-weight: 600; font-size: 1em; }
-.mdtoc-item.level-3,
-.mdtoc-item.level-4,
-.mdtoc-item.level-5,
-.mdtoc-item.level-6 { opacity: 0.85; font-size: 0.95em; }
+.mdtoc-item.level-2 { font-size: 1em; }
+.mdtoc-item.level-3 { font-size: 0.95em; opacity: 0.92; }
+.mdtoc-item.level-4 { font-size: 0.9em;  opacity: 0.86; }
+.mdtoc-item.level-5 { font-size: 0.85em; opacity: 0.82; }
+.mdtoc-item.level-6 { font-size: 0.85em; opacity: 0.74; }
 
 .mdtoc-text {
   display: inline;
@@ -224,6 +241,16 @@ body.mdtoc-right #mdtoc-sidebar {
   color: var(--vscode-descriptionForeground, #9d9d9d);
   border-radius: 3px;
   user-select: none;
+  /* 默认隐藏箭头（保留占位不跳版），hover/键盘聚焦才显示，减少视觉噪音。 */
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.mdtoc-item:hover .mdtoc-toggle,
+.mdtoc-toggle:focus-visible,
+.mdtoc-item:focus-visible .mdtoc-toggle,
+/* 收起态的父项箭头常显：否则用户无从得知这里藏着被折叠的子树。 */
+.mdtoc-item.mdtoc-collapsed-node .mdtoc-toggle {
+  opacity: 1;
 }
 .mdtoc-toggle:hover {
   color: var(--vscode-foreground, #cccccc);
@@ -245,6 +272,88 @@ body.mdtoc-right #mdtoc-sidebar {
   font-size: 0.85em;
   line-height: 1.5;
   text-align: center;
+}
+
+/* ---- 3.5 风格变体（v2-M3，dev/260804/02） ----
+ * body.mdtoc-style-<name> 互斥切换（toc.tsx 派生），零重渲染。
+ * indented = 默认（上面的基础规则即是，body class 仅作标记，无需额外规则）。
+ * 变体选择器带 body class（3 类 + 1 元素），特异性天然高于基础规则（2 类），无需 !important。
+ * 与提案 §4 的差异：项内有 toggle/spacer 元素（03 引入）；pill 保留层级缩进
+ * （提案统一 12px 需 !important 压 inline style，且丢层级感）。
+ */
+
+/* pill：active 整行圆角药丸高亮（保留层级缩进），背景使用半透明主色 surface。 */
+body.mdtoc-style-pill .mdtoc-item {
+  border-left: none;
+  border-radius: 6px;
+  margin: 1px 6px;
+}
+body.mdtoc-style-pill .mdtoc-item.active {
+  background: color-mix(in srgb, var(--vscode-textLink-foreground, #3794ff) 14%, transparent);
+  color: var(--vscode-textLink-foreground, #3794ff);
+  font-weight: 500;
+}
+body.mdtoc-style-pill .mdtoc-item:hover:not(.active) {
+  background: var(--vscode-list-hoverBackground);
+}
+body.mdtoc-style-pill .mdtoc-item.ancestor {
+  background: color-mix(in srgb, var(--vscode-textLink-foreground, #3794ff) 10%, transparent);
+}
+
+/* starlight：蛇形轨道线 + 可见区高亮段（仿 Fumadocs/Starlight page TOC）。
+   轨道线由 React 端 StarlightRail 测量各项位置后生成 SVG（沿缩进走位、拐弯圆角、
+   高亮段末端圆点），此处只负责文字着色与 SVG 描边取色。
+   祖先弱化沿用基础规则会与 in-view 着色打架，重置为中性。 */
+body.mdtoc-style-starlight .mdtoc-item {
+  border-left: none;
+  color: var(--vscode-descriptionForeground, #9d9d9d);
+}
+body.mdtoc-style-starlight .mdtoc-item:hover {
+  background: var(--vscode-list-hoverBackground);
+  color: var(--vscode-foreground, #cccccc);
+}
+/* 可见区段文字点亮，与轨道高亮段呼应。 */
+body.mdtoc-style-starlight .mdtoc-item.mdtoc-in-view {
+  color: var(--vscode-textLink-foreground, #3794ff);
+}
+body.mdtoc-style-starlight .mdtoc-item.active {
+  color: var(--vscode-textLink-foreground, #3794ff);
+  font-weight: 600;
+  background: transparent;
+}
+/* 基础规则的祖先弱化（主色 + opacity）与 in-view 着色语义冲突，重置为中性。 */
+body.mdtoc-style-starlight .mdtoc-item.ancestor {
+  color: var(--vscode-descriptionForeground, #9d9d9d);
+  opacity: 1;
+}
+body.mdtoc-style-starlight .mdtoc-item.ancestor.mdtoc-in-view {
+  color: var(--vscode-textLink-foreground, #3794ff);
+}
+
+/* 轨道线 SVG（StarlightRail 仅在 starlight 风格下渲染）。 */
+.mdtoc-rail {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+}
+.mdtoc-rail-track {
+  fill: none;
+  stroke: color-mix(in srgb, var(--vscode-descriptionForeground, #9d9d9d) 30%, transparent);
+  stroke-width: 1;
+}
+.mdtoc-rail-active {
+  fill: none;
+  stroke: var(--vscode-textLink-foreground, #3794ff);
+  stroke-width: 2;
+  stroke-linecap: round;
+  transition: d 0.15s ease;
+}
+.mdtoc-rail-dot {
+  fill: var(--vscode-textLink-foreground, #3794ff);
+  stroke: var(--vscode-sideBar-background, #1e1e1e);
+  stroke-width: 1.5;
 }
 
 /* ========== 4. 折叠态（M2） ========== */
@@ -342,6 +451,24 @@ body.mdtoc-right #mdtoc-fab {
   .mdtoc-tsep {
     background: ButtonText;
   }
+  /* v2-M3 风格变体兜底：变体把 active 的 border-left 置 none 且特异性更高，
+     此处按变体重申系统色 active 标识（轨道高亮/圆点/药丸底均用 Highlight）。 */
+  .mdtoc-rail-active {
+    stroke: Highlight;
+  }
+  .mdtoc-rail-dot {
+    fill: Highlight;
+  }
+  body.mdtoc-style-pill .mdtoc-item.active,
+  body.mdtoc-style-pill .mdtoc-item.ancestor {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+  }
+  body.mdtoc-style-starlight .mdtoc-item.mdtoc-in-view,
+  body.mdtoc-style-starlight .mdtoc-item.active {
+    color: Highlight;
+  }
 }
 
 /* ========== 8. 响应式（M3） ========== */
@@ -383,13 +510,16 @@ body.mdtoc-right #mdtoc-fab {
   }
 }
 
-/* ========== 9. 滚动条美化（VSCode 风格） ========== */
-#mdtoc-list::-webkit-scrollbar { width: 8px; }
+/* ========== 9. 滚动条美化（hover 才显，文档站风格） ========== */
+#mdtoc-list::-webkit-scrollbar { width: 6px; }
 #mdtoc-list::-webkit-scrollbar-thumb {
-  background: var(--vscode-scrollbarSlider-background);
-  border-radius: 4px;
+  background: transparent;
+  border-radius: 3px;
 }
-#mdtoc-list::-webkit-scrollbar-thumb:hover {
+#mdtoc-list:hover::-webkit-scrollbar-thumb {
+  background: var(--vscode-scrollbarSlider-background);
+}
+#mdtoc-list:hover::-webkit-scrollbar-thumb:hover {
   background: var(--vscode-scrollbarSlider-hoverBackground);
 }
 #mdtoc-list::-webkit-scrollbar-track { background: transparent; }

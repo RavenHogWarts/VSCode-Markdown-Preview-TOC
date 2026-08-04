@@ -97,6 +97,21 @@
           "minimum": 0,
           "maximum": 6,
           "markdownDescription": "自动展开到第 N 层。"
+        },
+        "markdownToc.style": {
+          "type": "string",
+          "enum": [
+            "indented",
+            "pill",
+            "starlight"
+          ],
+          "enumDescriptions": [
+            "缩进（默认，v1 视觉）",
+            "药丸（active 整行高亮圆角条）",
+            "星标（连续可见区竖线+圆点，仿 Starlight）"
+          ],
+          "default": "indented",
+          "markdownDescription": "TOC 视觉风格。工具栏可即时切换并记忆（覆盖此项）。"
         }
       }
     }

@@ -19,6 +19,8 @@ import { markTree } from '../lib/tree';
 interface UseTocResult {
   items: TocItem[];
   activeId: string | null;
+  /** 章节与视口有重叠的标题 id 集合（Starlight 轨道高亮用，按章节区间计算）。 */
+  visibleIds: ReadonlySet<string>;
   /** 点击 TOC 项：平滑滚动到标题 + 立即高亮 + 挂起滚动跟随。 */
   jump: (id: string) => void;
 }
@@ -26,11 +28,13 @@ interface UseTocResult {
 export function useToc(cfg: MdtocConfig): UseTocResult {
   const [items, setItems] = useState<TocItem[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [visibleIdsState, setVisibleIdsState] = useState<ReadonlySet<string>>(new Set());
 
   // ---- 跨渲染的可变状态（用 ref，不触发重渲染，语义等价 v1 的闭包变量）----
   const itemsRef = useRef<TocItem[]>([]);         // = v1 items（文档顺序，供 IO 回调取最上项）
   const lastSig = useRef('');                     // = v1 lastSignature（签名短路）
   const visibleIds = useRef<Set<string>>(new Set()); // = v1 visibleIds（全局可见集合）
+  const lastVisibleSig = useRef('');              // 用于 visibleIdsState 去重，避免频繁重渲染
   const activeRef = useRef<string | null>(null);  // = v1 currentActive（供 IO 回调读当前 active）
   const suspended = useRef(false);                // = v1 isProgrammaticScroll（跳转期挂起）
   const suspendTimer = useRef<number | undefined>(undefined);
@@ -40,6 +44,8 @@ export function useToc(cfg: MdtocConfig): UseTocResult {
     if (!cfg.enabled) {
       setItems([]);
       itemsRef.current = [];
+      setVisibleIdsState(new Set());
+      lastVisibleSig.current = '';
       return;
     }
 
@@ -92,6 +98,39 @@ export function useToc(cfg: MdtocConfig): UseTocResult {
       });
     };
 
+    // ---- 可见章节计算（Starlight 轨道高亮用，与 active 检测解耦）----
+    // active 用的 IO 带 rootMargin -70%（只算顶部 30%），语义是「当前在读哪一条」；
+    // Starlight 要的是「阅读区正显示着哪些章节」：标题 i 的章节区间 = [标题 i, 标题 i+1)。
+    // 阅读区不是整个视口，而是顶部 60% 的带（对齐 Fumadocs 的 rootMargin 底部 -40%）——
+    // 否则短文档整篇都在屏上时，轨道会整条点亮，失去「当前读到哪」的指示意义。
+    // 标题即使已滚出顶部，只要其内容还盖住阅读区，该项就保持高亮。
+    // 滚动高频触发，rAF 节流 + 签名去重。
+    let visRaf = 0;
+    const computeVisibleSections = () => {
+      visRaf = 0;
+      const bandBottom = window.innerHeight * 0.6;
+      const tops = itemsRef.current.map((it) => {
+        const el = document.getElementById(it.id);
+        return el ? el.getBoundingClientRect().top : Number.POSITIVE_INFINITY;
+      });
+      const next = new Set<string>();
+      for (let i = 0; i < tops.length; i++) {
+        const start = tops[i];
+        const end = i + 1 < tops.length ? tops[i + 1] : Number.POSITIVE_INFINITY;
+        if (end > 0 && start < bandBottom) next.add(itemsRef.current[i].id);
+      }
+      const sig = Array.from(next).join('|');
+      if (sig !== lastVisibleSig.current) {
+        lastVisibleSig.current = sig;
+        setVisibleIdsState(next);
+      }
+    };
+    const scheduleVisible = () => {
+      if (!visRaf) visRaf = requestAnimationFrame(computeVisibleSections);
+    };
+    window.addEventListener('scroll', scheduleVisible, { passive: true });
+    window.addEventListener('resize', scheduleVisible);
+
     // 扫描标题 → 更新 items + 重连 observer（= v1 rebuild）。
     const rebuild = () => {
       const headings = Array.from(
@@ -121,6 +160,8 @@ export function useToc(cfg: MdtocConfig): UseTocResult {
 
       // observer 必须每次重建（新标题节点），无论结构是否变化。
       observeScroll();
+      // 内容/结构变化后章节几何过期，重算可见集合。
+      scheduleVisible();
     };
 
     // ---- 内容变更重建（防抖 100ms，= v1 rebuildDebounced）----
@@ -147,8 +188,11 @@ export function useToc(cfg: MdtocConfig): UseTocResult {
     return () => {
       clearTimeout(rebuildTimer);
       clearTimeout(suspendTimer.current);
+      if (visRaf) cancelAnimationFrame(visRaf);
       mut.disconnect();
       observer?.disconnect();
+      window.removeEventListener('scroll', scheduleVisible);
+      window.removeEventListener('resize', scheduleVisible);
       window.removeEventListener('scrollend', onScrollEnd);
       window.visualViewport?.removeEventListener('scrollend', onScrollEnd);
     };
@@ -173,5 +217,5 @@ export function useToc(cfg: MdtocConfig): UseTocResult {
     setActiveId(id);
   }, []);
 
-  return { items, activeId, jump };
+  return { items, activeId, visibleIds: visibleIdsState, jump };
 }

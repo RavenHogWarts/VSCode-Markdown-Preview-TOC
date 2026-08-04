@@ -9,15 +9,20 @@
 // 从视觉与无障碍树移除，语义一致且零 CSS）。折叠全收起且从未手动操作时，
 // 列表尾部给「逐级展开」提示（03 §6.3）。
 
-import { useEffect, useRef } from 'react';
-import type { TocItem as TocItemModel } from '../types';
+import { useEffect, useMemo, useRef } from 'react';
+import type { StyleName, TocItem as TocItemModel } from '../types';
 import { cssEscape } from '../lib/dom';
-import { deriveHidden } from '../lib/tree';
+import { ancestorIds, deriveHidden } from '../lib/tree';
 import { TocItem } from './TocItem';
+import { StarlightRail } from './StarlightRail';
 
 interface TocListProps {
   items: TocItemModel[];
   activeId: string | null;
+  /** 当前在视口内的标题 id 集合（Starlight 等变体用）。 */
+  visibleIds?: ReadonlySet<string>;
+  /** 当前风格：starlight 时额外渲染蛇形轨道线 SVG（StarlightRail）。 */
+  styleName: StyleName;
   minDepth: number;
   enabled: boolean;
   collapsedIds: ReadonlySet<string>;
@@ -30,6 +35,8 @@ interface TocListProps {
 export function TocList({
   items,
   activeId,
+  visibleIds,
+  styleName,
   minDepth,
   enabled,
   collapsedIds,
@@ -52,6 +59,13 @@ export function TocList({
     el?.scrollIntoView({ block: 'nearest' });
   }, [activeId, collapsedIds]);
 
+  // active 项的祖先链：用于弱化高亮当前阅读路径（设计文档 §6.4）。
+  // 注意：Hooks 必须放在所有早期 return 之前，以保证每次渲染调用顺序一致。
+  const ancestorSet = useMemo(
+    () => new Set(activeId ? ancestorIds(items, activeId) : []),
+    [activeId, items]
+  );
+
   if (!enabled) {
     return <nav id="mdtoc-list" ref={navRef} />;
   }
@@ -69,12 +83,23 @@ export function TocList({
 
   return (
     <nav id="mdtoc-list" ref={navRef} aria-labelledby="mdtoc-title-text">
+      {styleName === 'starlight' && (
+        <StarlightRail
+          navRef={navRef}
+          items={items}
+          collapsedIds={collapsedIds}
+          visibleIds={visibleIds ?? new Set()}
+          activeId={activeId}
+        />
+      )}
       {items.map((it, i) =>
         hidden[i] ? null : (
           <TocItem
             key={it.id}
             item={it}
             active={it.id === activeId}
+            ancestor={ancestorSet.has(it.id)}
+            inView={visibleIds ? visibleIds.has(it.id) : it.id === activeId}
             minDepth={minDepth}
             collapsed={it.hasChildren && collapsedIds.has(it.id)}
             onJump={onJump}

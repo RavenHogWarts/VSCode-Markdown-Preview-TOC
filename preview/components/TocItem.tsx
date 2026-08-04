@@ -8,11 +8,16 @@
 // 附带收益：{item.text} 由 React 自动转义，v1 的 escapeHtml/escapeAttr 在此退休（XSS 面收窄）。
 
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import type { CSSProperties } from 'react';
 import type { TocItem as TocItemModel } from '../types';
 
 interface TocItemProps {
   item: TocItemModel;
   active: boolean;
+  /** 该项是否为当前 active 项的祖先（用于路径高亮）。 */
+  ancestor: boolean;
+  /** 该项当前是否在正文视口内（Starlight 可见区高亮）。 */
+  inView?: boolean;
   minDepth: number;
   /** 该父项的子树当前是否收起（叶子项恒 false）。 */
   collapsed: boolean;
@@ -20,20 +25,27 @@ interface TocItemProps {
   onToggle: (id: string) => void;
 }
 
-export function TocItem({ item, active, minDepth, collapsed, onJump, onToggle }: TocItemProps) {
-  // 缩进：与 v1 一致 —— 12 基准 + 每级 14px。
-  const paddingLeft = 12 + (item.level - minDepth) * 14;
+export function TocItem({ item, active, ancestor, inView, minDepth, collapsed, onJump, onToggle }: TocItemProps) {
+  // 缩进：12px 基准 + 每级 16px，与文档站层级节奏对齐。
+  // --mdtoc-level（相对层级）供风格变体 CSS 计算（M3）。
+  const relLevel = item.level - minDepth;
+  const itemStyle = {
+    paddingLeft: 12 + relLevel * 16,
+    '--mdtoc-level': relLevel,
+  } as CSSProperties;
 
   const className =
     `mdtoc-item level-${item.level}` +
     (active ? ' active' : '') +
+    (ancestor ? ' ancestor' : '') +
+    (inView ? ' mdtoc-in-view' : '') +
     (item.hasChildren ? ' mdtoc-parent' : '') +
     (collapsed ? ' mdtoc-collapsed-node' : '');
 
   return (
     <a
       className={className}
-      style={{ paddingLeft }}
+      style={itemStyle}
       data-target={item.id}
       title={item.text}
       // aria-current="location"：补 v1 欠的无障碍（260804/00 §2.3），AT 用户可感知当前位置。

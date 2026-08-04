@@ -13,6 +13,7 @@ export const FALLBACK_CONFIG: MdtocConfig = {
   maxDepth: 6,
   highlightOnScroll: true,
   autoExpandDepth: 3,
+  style: 'indented',
 };
 
 export function readConfig(): MdtocConfig {

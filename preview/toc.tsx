@@ -23,6 +23,7 @@ import { useMediaQuery } from './hooks/useMediaQuery';
 import { useOverrideState, type OverrideCodec } from './hooks/useOverrideState';
 import { useCollapsedNodes } from './hooks/useCollapsedNodes';
 import { useToc } from './hooks/useToc';
+import { STYLE_NAMES, type StyleName } from './types';
 import { Header } from './components/Header';
 import { Toolbar } from './components/Toolbar';
 import { TocList } from './components/TocList';
@@ -47,11 +48,15 @@ const COLLAPSED_CODEC: OverrideCodec<boolean> = {
   parse: (raw) => (raw === '1' ? true : raw === '0' ? false : null),
   serialize: (v) => (v ? '1' : '0'),
 };
+const STYLE_CODEC: OverrideCodec<StyleName> = {
+  parse: (raw) => (STYLE_NAMES.includes(raw as StyleName) ? (raw as StyleName) : null),
+  serialize: (v) => v,
+};
 
 function App({ fabHost }: { fabHost: HTMLElement }) {
   const cfg = useConfig();
   const narrow = useMediaQuery(NARROW_QUERY);
-  const { items, activeId, jump } = useToc(cfg);
+  const { items, activeId, visibleIds, jump } = useToc(cfg);
 
   // 子树折叠（M2）：折叠集三态管理 + autoExpandDepth 激活 + 手风琴跟随——
   // activeId 的祖先链作为会话 overlay 从折叠集减除：全部折叠时滚动正文，
@@ -74,6 +79,12 @@ function App({ fabHost }: { fabHost: HTMLElement }) {
     cfg.defaultCollapsed,
     COLLAPSED_CODEC
   );
+  // 风格（M3）：base 来自 meta 配置，但 settings.json 可写任意字符串，先校验兜底。
+  const [style, setStyle] = useOverrideState<StyleName>(
+    'style',
+    STYLE_NAMES.includes(cfg.style) ? cfg.style : 'indented',
+    STYLE_CODEC
+  );
 
   // 配置/状态驱动的 body 副作用。正文让位靠 media/toc.css 读 body 上的
   // --mdtoc-width 与 mdtoc-right/mdtoc-collapsed class。
@@ -89,6 +100,12 @@ function App({ fabHost }: { fabHost: HTMLElement }) {
   useLayoutEffect(() => {
     document.body.classList.toggle('mdtoc-collapsed', collapsed);
   }, [collapsed]);
+  // 风格 class：互斥切换（body.mdtoc-style-<name>），CSS 变体规则据此生效（02 §3.1）。
+  useLayoutEffect(() => {
+    for (const s of STYLE_NAMES) {
+      document.body.classList.toggle(`mdtoc-style-${s}`, s === style);
+    }
+  }, [style]);
 
   // 窄屏响应式：matchMedia → body class（与 CSS @media(max-width:720px) 配合，= v1 applyNarrow）。
   useLayoutEffect(() => {
@@ -116,21 +133,30 @@ function App({ fabHost }: { fabHost: HTMLElement }) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
+  // 风格循环切换（02 §3.2：单按钮循环省横向空间，4 按钮在窄 sidebar 挤不下）。
+  const cycleStyle = () => {
+    setStyle(STYLE_NAMES[(STYLE_NAMES.indexOf(style) + 1) % STYLE_NAMES.length]);
+  };
+
   return (
     <>
       <Header onToggle={toggleCollapsed}>
         <Toolbar
           position={position}
           collapsed={collapsed}
+          styleName={style}
           onPosition={setPosition}
           onToggleCollapsed={toggleCollapsed}
           onSetAllNodes={setAllNodes}
           onBackToTop={backToTop}
+          onCycleStyle={cycleStyle}
         />
       </Header>
       <TocList
         items={items}
         activeId={activeId}
+        visibleIds={visibleIds}
+        styleName={style}
         minDepth={cfg.minDepth}
         enabled={cfg.enabled}
         collapsedIds={collapsedIds}

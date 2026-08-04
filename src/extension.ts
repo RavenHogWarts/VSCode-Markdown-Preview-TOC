@@ -18,6 +18,7 @@ interface MdtocConfig {
   maxDepth: number;
   highlightOnScroll: boolean;
   autoExpandDepth: number;
+  style: 'indented' | 'pill' | 'starlight';
 }
 
 export function activate(context: vscode.ExtensionContext) {
@@ -56,6 +57,7 @@ function injectConfigMeta(): string {
     maxDepth:          cfg.get('maxDepth', 6),
     highlightOnScroll: cfg.get('highlightOnScroll', true),
     autoExpandDepth:   cfg.get('autoExpandDepth', 3),
+    style:             cfg.get('style', 'indented'),
   };
   return `<meta id="mdtoc-config" data-config="${escapeAttr(JSON.stringify(data))}">`;
 }

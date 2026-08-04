@@ -1,6 +1,10 @@
 // preview/types.ts
 // 预览侧共享类型。与宿主 src/extension.ts 的 MdtocConfig 保持一致。
 
+/** TOC 视觉风格（v2-M3，dev/260804/02）。数组供循环切换与 codec 校验复用。 */
+export const STYLE_NAMES = ['indented', 'pill', 'starlight'] as const;
+export type StyleName = (typeof STYLE_NAMES)[number];
+
 export interface MdtocConfig {
   enabled: boolean;
   width: number;
@@ -10,6 +14,7 @@ export interface MdtocConfig {
   maxDepth: number;
   highlightOnScroll: boolean;
   autoExpandDepth: number;
+  style: StyleName;
 }
 
 /**

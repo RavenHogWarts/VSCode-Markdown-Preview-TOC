@@ -15,30 +15,44 @@ import {
   ArrowUp,
   ChevronsDownUp,
   ChevronsUpDown,
+  Palette,
   PanelLeft,
   PanelLeftClose,
   PanelRight,
 } from 'lucide-react';
+import type { StyleName } from '../types';
 
 interface ToolbarProps {
   position: 'left' | 'right';
   collapsed: boolean;
+  styleName: StyleName;
   onPosition: (p: 'left' | 'right') => void;
   onToggleCollapsed: () => void;
-  /** 全部展开(false)/收起(true)。M1 阶段仅写入哨兵，无可见效果（03 落地时消费）。 */
+  /** 全部展开(false)/收起(true)。 */
   onSetAllNodes: (collapse: boolean) => void;
   onBackToTop: () => void;
+  /** 循环切换风格（02 §3.2：单按钮循环，title 播报当前风格）。 */
+  onCycleStyle: () => void;
 }
+
+/** 风格的中文名（title/aria 播报用，02 §3.2）。 */
+const STYLE_LABELS: Record<StyleName, string> = {
+  indented: '缩进',
+  pill: '药丸',
+  starlight: '星标',
+};
 
 const ICON_SIZE = 14;
 
 export function Toolbar({
   position,
   collapsed,
+  styleName,
   onPosition,
   onToggleCollapsed,
   onSetAllNodes,
   onBackToTop,
+  onCycleStyle,
 }: ToolbarProps) {
   return (
     <div className="mdtoc-toolbar" role="toolbar" aria-label="TOC 操作">
@@ -69,6 +83,16 @@ export function Toolbar({
         onClick={onBackToTop}
       >
         <ArrowUp size={ICON_SIZE} aria-hidden />
+      </button>
+      <span className="mdtoc-tsep" aria-hidden />
+      <button
+        type="button"
+        className="mdtoc-tbtn"
+        title={`TOC 风格：${STYLE_LABELS[styleName]}（点击切换）`}
+        aria-label={`切换 TOC 风格，当前：${STYLE_LABELS[styleName]}`}
+        onClick={onCycleStyle}
+      >
+        <Palette size={ICON_SIZE} aria-hidden />
       </button>
       <span className="mdtoc-tsep" aria-hidden />
       <button
