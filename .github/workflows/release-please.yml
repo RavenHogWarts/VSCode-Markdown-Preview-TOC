@@ -1,14 +1,20 @@
 name: Release Please
 
-# 自动化版本号 + CHANGELOG。详见 dev/260803/08 §8。
+# 自动化版本号 + CHANGELOG + 构建 vsix 附加到 Release。详见 dev/260803/08 §8。
 #
 # 工作流：
 #   1. 你正常提交（遵循 Conventional Commits：feat/fix/chore/docs/...）→ push master。
-#   2. 本 Action 累积 feat/fix/perf commit → 自动开/更新「Release PR」：
+#   2. release-please 累积 feat/fix commit → 自动开/更新「Release PR」：
 #        - 改 package.json 的 version
 #        - 追加 CHANGELOG.md 新版本段（按 changelog-sections 归类）
-#   3. 你 review 该 PR → Merge → 本 Action 自动打 tag vX.Y.Z + 创建 GitHub Release。
-#   4. Release 创建后触发 release.yml（on: release published）→ 构建 .vsix 附加到该 Release。
+#   3. 你 review 该 PR → Merge → release-please 自动打 tag vX.Y.Z + 创建 GitHub Release。
+#   4. 同一 workflow 的 build-and-attach job（if: release_created）接着跑：
+#        构建 + 打包 .vsix → 附加到刚创建的 Release。
+#
+# ⚠ 为什么构建 vsix 不放在单独的 release.yml（on: release published）里？
+#   GitHub 有反循环规则：用默认 GITHUB_TOKEN 触发的动作（如 release-please 创建 Release）
+#   不会再触发其他 workflow。所以必须把构建放进同一个 workflow，靠 release-please 的
+#   outputs.release_created 信号衔接，而不是依赖 release 事件。
 #
 # 版本号规则：
 #   - feat      → minor（1.1.0 → 1.2.0）
@@ -25,15 +31,64 @@ on:
     branches: [master]
 
 permissions:
-  contents: write     # 创建 tag / Release
+  contents: write     # 创建 tag / Release / 上传资源
   pull-requests: write # 开 Release PR
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release-please.outputs.release_created }}
+      tag_name: ${{ steps.release-please.outputs.tag_name }}
     steps:
-      - uses: googleapis/release-please-action@v4
+      - id: release-please
+        uses: googleapis/release-please-action@v4
         with:
           release-type: node
           # 读取仓库根的 release-please-config.json（含 changelog-sections 配置）
           config-file: release-please-config.json
+
+  # 仅当 release-please 本次「创建了 Release」（即 Release PR 被合并时）才跑。
+  # 平时 push 只会开/更新 Release PR，release_created 为空，本 job 跳过。
+  build-and-attach:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # checkout 刚打 tag 的那个提交（含 release-please 改好的 package.json 版本号）
+          ref: ${{ needs.release-please.outputs.tag_name }}
+
+      - name: Setup pnpm
+        # 从 package.json 的 packageManager (pnpm@9.15.0) 读取版本，
+        # 不要在此再指定 version，否则与 packageManager 冲突报错。
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build (prod)
+        run: pnpm run build:prod
+
+      - name: Package VSIX
+        run: pnpm run package
+
+      - name: Attach VSIX to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          # 精确指向 release-please 刚创建的那个 Release
+          tag_name: ${{ needs.release-please.outputs.tag_name }}
+          files: '*.vsix'
