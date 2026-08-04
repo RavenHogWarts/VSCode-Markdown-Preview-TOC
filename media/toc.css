@@ -59,6 +59,8 @@ h1, h2, h3, h4, h5, h6 {
   transition: transform 0.2s ease;
   box-sizing: border-box;
   overflow: hidden;
+  /* v2-M1：作为 container query 容器（工具栏 compact 降级用，见 §2.5）。 */
+  container-type: inline-size;
 }
 
 /* 右侧模式：贴右、边框换到左边 */
@@ -69,30 +71,98 @@ body.mdtoc-right #mdtoc-sidebar {
   border-left: 1px solid var(--vscode-editorGroup-border, #2d2d2d);
 }
 
-/* ========== 2. 头部 ========== */
+/* ========== 2. 头部（v2-M1：标题 + 工具栏两栏） ========== */
+/* v1 整个 header 可点折叠；v2 折叠入口收窄到 .mdtoc-title（点按钮不误触发），
+   cursor/hover 也随之下沉到标题与按钮上（dev/260804/01 §7）。 */
 #mdtoc-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
+  gap: 6px;
+  padding: 8px 10px;
   font-weight: 600;
   color: var(--vscode-sideBarTitle-foreground, #cccccc);
-  cursor: pointer;
   user-select: none;
   border-bottom: 1px solid var(--vscode-editorGroup-border, #2d2d2d);
   flex-shrink: 0;
-}
-#mdtoc-header:hover {
-  background: var(--vscode-list-hoverBackground);
 }
 .mdtoc-title {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-size: 11px;
+  white-space: nowrap;
+  cursor: pointer;
+  padding: 3px 4px;
+  border-radius: 4px;
 }
-.mdtoc-fold-btn {
-  font-size: 14px;
+.mdtoc-title:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+.mdtoc-title:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: -1px;
+}
+
+/* ---- 2.1 工具栏（dev/260804/01 §5） ---- */
+.mdtoc-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.mdtoc-tbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--vscode-foreground, #cccccc);
   opacity: 0.7;
+  cursor: pointer;
+  border-radius: 4px;
+  line-height: 1;
+}
+.mdtoc-tbtn:hover {
+  background: var(--vscode-list-hoverBackground);
+  opacity: 1;
+}
+.mdtoc-tbtn:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: -1px;
+}
+/* 当前激活态（如右侧模式下的「靠右」按钮）。 */
+.mdtoc-tbtn[aria-pressed='true'] {
+  background: var(--vscode-list-activeSelectionBackground);
+  color: var(--vscode-list-activeSelectionForeground);
+  opacity: 1;
+}
+.mdtoc-tsep {
+  width: 1px;
+  height: 14px;
+  background: var(--vscode-editorGroup-border, #2d2d2d);
+  margin: 0 2px;
+  flex-shrink: 0;
+}
+
+/* ---- 2.5 窄栏紧凑模式：隐藏文字标题，只留工具按钮 ---- */
+/* 主方案：container query（#mdtoc-sidebar 已设 container-type，见 §1）；
+   兜底：toc.tsx 用 ResizeObserver 加 .mdtoc-compact，两组规则镜像（dev/260804/01 §9.1）。 */
+@container (max-width: 220px) {
+  .mdtoc-title {
+    display: none;
+  }
+  #mdtoc-header {
+    justify-content: flex-end;
+  }
+}
+#mdtoc-sidebar.mdtoc-compact .mdtoc-title {
+  display: none;
+}
+#mdtoc-sidebar.mdtoc-compact #mdtoc-header {
+  justify-content: flex-end;
 }
 
 /* ========== 3. 列表 ========== */
@@ -145,10 +215,6 @@ body.mdtoc-collapsed #mdtoc-sidebar {
 }
 body.mdtoc-right.mdtoc-collapsed #mdtoc-sidebar {
   transform: translateX(100%);
-}
-/* 折叠箭头转一下表示「已收起」。 */
-body.mdtoc-collapsed .mdtoc-fold-btn {
-  transform: rotate(-90deg);
 }
 
 /* ========== 5. 折叠浮动按钮 FAB（M2） ========== */
@@ -222,6 +288,20 @@ body.mdtoc-right #mdtoc-fab {
   }
   #mdtoc-fab {
     border: 1px solid ButtonText;
+  }
+  /* v2-M1 工具栏兜底：透明背景的按钮在高对比度下不可见，补边框；
+     激活态用系统 Highlight（需关掉 forced-color-adjust 才能自定义背景）。 */
+  .mdtoc-tbtn {
+    border: 1px solid ButtonText;
+  }
+  .mdtoc-tbtn[aria-pressed='true'] {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+    border-color: Highlight;
+  }
+  .mdtoc-tsep {
+    background: ButtonText;
   }
 }
 

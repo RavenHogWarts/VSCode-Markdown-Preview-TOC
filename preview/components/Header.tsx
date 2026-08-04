@@ -1,21 +1,38 @@
 // preview/components/Header.tsx
-// TOC 头部：标题 + 折叠指示箭头。点击整个 header 切换整栏折叠（= v1 header 交互）。
+// TOC 头部：可点击标题（整栏折叠）+ 工具栏（经 children 传入，Header 不关心按钮细节）。
 //
-// 图标：v1 用 Unicode `▾`；这里换 lucide-react 的 <ChevronDown>。
-// 颜色自动跟随主题——lucide 默认 stroke="currentColor"，继承 CSS 里 #mdtoc-header 的 color；
-// 折叠态旋转沿用 media/toc.css 的 `.mdtoc-fold-btn { transform: rotate(-90deg) }`（对 svg 同样生效）。
+// v2 改造（dev/260804/01 §7）：折叠监听从整个 header 收窄到 .mdtoc-title——
+// header 里现在有工具栏按钮，点按钮不应误触发整栏折叠；「点标题折叠」保留 v1 肌肉记忆。
+// 标题加 role="button" + tabIndex + Enter/Space，键盘可达（提案 §6）。
+// v1 的 ChevronDown 折叠指示箭头移除：折叠态改由工具栏按钮的 aria-pressed + FAB 表达。
 
-import { ChevronDown } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 interface HeaderProps {
   onToggle: () => void;
+  children?: ReactNode;
 }
 
-export function Header({ onToggle }: HeaderProps) {
+export function Header({ onToggle, children }: HeaderProps) {
   return (
-    <div id="mdtoc-header" onClick={onToggle}>
-      <span className="mdtoc-title" id="mdtoc-title-text">目录</span>
-      <ChevronDown className="mdtoc-fold-btn" size={16} aria-hidden />
+    <div id="mdtoc-header">
+      <span
+        className="mdtoc-title"
+        id="mdtoc-title-text"
+        role="button"
+        tabIndex={0}
+        title="折叠目录"
+        onClick={onToggle}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onToggle();
+          }
+        }}
+      >
+        目录
+      </span>
+      {children}
     </div>
   );
 }
