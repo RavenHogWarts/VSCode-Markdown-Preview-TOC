@@ -31,7 +31,7 @@ on:
     branches: [master]
 
 permissions:
-  contents: write     # 创建 tag / Release / 上传资源
+  contents: write # 创建 tag / Release / 上传资源
   pull-requests: write # 开 Release PR
 
 jobs:
@@ -91,4 +91,4 @@ jobs:
         with:
           # 精确指向 release-please 刚创建的那个 Release
           tag_name: ${{ needs.release-please.outputs.tag_name }}
-          files: '*.vsix'
+          files: "dist/*.vsix"
