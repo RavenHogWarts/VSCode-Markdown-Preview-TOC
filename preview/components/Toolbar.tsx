@@ -21,6 +21,7 @@ import {
   PanelRight,
 } from 'lucide-react';
 import type { StyleName } from '../types';
+import { useState } from 'react';
 
 interface ToolbarProps {
   position: 'left' | 'right';
@@ -54,27 +55,23 @@ export function Toolbar({
   onBackToTop,
   onCycleStyle,
 }: ToolbarProps) {
+  const [isCollapsed, setIsCollapsed] = useState(collapsed);
+
   return (
     <div className="mdtoc-toolbar" role="toolbar" aria-label="TOC 操作">
       <button
         type="button"
         className="mdtoc-tbtn"
-        title="全部展开"
-        aria-label="全部展开"
-        onClick={() => onSetAllNodes(false)}
+        title={`全部${isCollapsed ? '展开' : '收起'}`}
+        aria-label={`全部${isCollapsed ? '展开' : '收起'}`}
+        onClick={() => {onSetAllNodes(!isCollapsed); setIsCollapsed(!isCollapsed)}}
       >
-        <ChevronsUpDown size={ICON_SIZE} aria-hidden />
+        {isCollapsed ? (
+          <ChevronsUpDown size={ICON_SIZE} aria-hidden />
+        ) : (
+          <ChevronsDownUp size={ICON_SIZE} aria-hidden />
+        )}        
       </button>
-      <button
-        type="button"
-        className="mdtoc-tbtn"
-        title="全部收起"
-        aria-label="全部收起"
-        onClick={() => onSetAllNodes(true)}
-      >
-        <ChevronsDownUp size={ICON_SIZE} aria-hidden />
-      </button>
-      <span className="mdtoc-tsep" aria-hidden />
       <button
         type="button"
         className="mdtoc-tbtn"
