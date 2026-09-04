@@ -19,6 +19,7 @@ import {
   PanelLeft,
   PanelLeftClose,
   PanelRight,
+  Search,
 } from 'lucide-react';
 import type { StyleName } from '../types';
 import { useState } from 'react';
@@ -34,6 +35,8 @@ interface ToolbarProps {
   onBackToTop: () => void;
   /** 循环切换风格（02 §3.2：单按钮循环，title 播报当前风格）。 */
   onCycleStyle: () => void;
+  /** 打开页内搜索栏（等价 Ctrl/Cmd+F）。 */
+  onOpenSearch: () => void;
 }
 
 /** 风格的中文名（title/aria 播报用，02 §3.2）。 */
@@ -54,6 +57,7 @@ export function Toolbar({
   onSetAllNodes,
   onBackToTop,
   onCycleStyle,
+  onOpenSearch,
 }: ToolbarProps) {
   const [isCollapsed, setIsCollapsed] = useState(collapsed);
 
@@ -111,6 +115,16 @@ export function Toolbar({
         onClick={() => onPosition('right')}
       >
         <PanelRight size={ICON_SIZE} aria-hidden />
+      </button>
+      <span className="mdtoc-tsep" aria-hidden />
+      <button
+        type="button"
+        className="mdtoc-tbtn"
+        title="页内搜索（Ctrl/Cmd+F）"
+        aria-label="页内搜索"
+        onClick={onOpenSearch}
+      >
+        <Search size={ICON_SIZE} aria-hidden />
       </button>
       <span className="mdtoc-tsep" aria-hidden />
       <button
