@@ -523,3 +523,72 @@ body.mdtoc-right #mdtoc-fab {
   background: var(--vscode-scrollbarSlider-hoverBackground);
 }
 #mdtoc-list::-webkit-scrollbar-track { background: transparent; }
+
+/* ========== 10. 页内搜索（v2-M4） ========== */
+/* 容器只管定位/层级；.mdtoc-searchbar-inner 是 React portal 进来的内容（同 Fab 模式）。
+   显式 margin:0：§0 的正文让位规则会给 body 直接子元素加 margin，fixed 元素同样被偏移，
+   这里清零（id 选择器特异性高于 §0 的 :not() 组合，无需 !important）。 */
+#mdtoc-searchbar {
+  position: fixed;
+  top: 8px;
+  right: 16px;
+  margin-left: 0;
+  margin-right: 0;
+  z-index: 60;                       /* 高于 sidebar(50)/FAB(51)，搜索时可能在侧栏之上 */
+}
+/* TOC 靠右且未折叠时，让开侧栏宽度 */
+body.mdtoc-right:not(.mdtoc-collapsed) #mdtoc-searchbar {
+  right: calc(var(--mdtoc-width) + 16px);
+}
+.mdtoc-searchbar-inner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  background: var(--vscode-editorWidget-background, var(--vscode-sideBar-background, #1e1e1e));
+  color: var(--vscode-editorWidget-foreground, var(--vscode-foreground, #cccccc));
+  border: 1px solid var(--vscode-editorWidget-border, var(--vscode-editorGroup-border, #2d2d2d));
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.36);
+}
+.mdtoc-searchbar-input {
+  width: 160px;
+  padding: 2px 6px;
+  font-size: 12px;
+  font-family: var(--vscode-font-family);
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 4px;
+  outline: none;
+}
+.mdtoc-searchbar-input:focus {
+  border-color: var(--vscode-focusBorder);
+}
+.mdtoc-searchbar-input::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+}
+/* 无结果：红框警示（对齐浏览器 find） */
+.mdtoc-searchbar-input.mdtoc-searchbar-noresult {
+  border-color: var(--vscode-inputValidation-errorBorder, #f14c4c);
+}
+.mdtoc-searchbar-count {
+  min-width: 40px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground, #9d9d9d);
+  user-select: none;
+}
+.mdtoc-searchbar-inner .mdtoc-tbtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* 命中高亮：CSS Custom Highlight API 伪元素（只登记 Range、不动 DOM，见 lib/search.ts）。
+   配色复用编辑器查找的主题变量，暗/亮主题自适应；active 层后注册、绘制在 hit 层之上。 */
+::highlight(mdtoc-search-hit) {
+  background-color: var(--vscode-editor-findMatchHighlightBackground, rgba(234, 92, 0, 0.33));
+}
+::highlight(mdtoc-search-active) {
+  background-color: var(--vscode-editor-findMatchBackground, rgba(255, 150, 50, 0.65));
+}

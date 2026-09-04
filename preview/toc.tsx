@@ -23,11 +23,13 @@ import { useMediaQuery } from './hooks/useMediaQuery';
 import { useOverrideState, type OverrideCodec } from './hooks/useOverrideState';
 import { useCollapsedNodes } from './hooks/useCollapsedNodes';
 import { useToc } from './hooks/useToc';
+import { useSearch } from './hooks/useSearch';
 import { STYLE_NAMES, type StyleName } from './types';
 import { Header } from './components/Header';
 import { Toolbar } from './components/Toolbar';
 import { TocList } from './components/TocList';
 import { Fab } from './components/Fab';
+import { SearchBar } from './components/SearchBar';
 
 interface WindowWithMdtoc extends Window {
   __mdtoc_cleanup__?: () => void;
@@ -53,10 +55,14 @@ const STYLE_CODEC: OverrideCodec<StyleName> = {
   serialize: (v) => v,
 };
 
-function App({ fabHost }: { fabHost: HTMLElement }) {
+function App({ fabHost, searchHost }: { fabHost: HTMLElement; searchHost: HTMLElement }) {
   const cfg = useConfig();
   const narrow = useMediaQuery(NARROW_QUERY);
   const { items, activeId, visibleIds, jump } = useToc(cfg);
+
+  // 页内搜索（v2-M4）：原生预览无 find-in-page，Ctrl/Cmd+F 唤起自实现搜索栏。
+  // 与 TOC 功能正交（markdownToc.enabled=false 时也可用），高亮走 CSS Custom Highlight。
+  const search = useSearch();
 
   // 子树折叠（M2）：折叠集三态管理 + autoExpandDepth 激活 + 手风琴跟随——
   // activeId 的祖先链作为会话 overlay 从折叠集减除：全部折叠时滚动正文，
@@ -150,6 +156,7 @@ function App({ fabHost }: { fabHost: HTMLElement }) {
           onSetAllNodes={setAllNodes}
           onBackToTop={backToTop}
           onCycleStyle={cycleStyle}
+          onOpenSearch={search.openSearch}
         />
       </Header>
       <TocList
@@ -167,6 +174,20 @@ function App({ fabHost }: { fabHost: HTMLElement }) {
       />
       {/* FAB 是 body 下的独立浮层（折叠态才显示），用 portal 渲染进 #mdtoc-fab 容器 */}
       {createPortal(<Fab onExpand={expand} />, fabHost)}
+      {/* 搜索栏同模式：打开态才挂载（挂载即聚焦，见 SearchBar），portal 进 #mdtoc-searchbar */}
+      {search.open &&
+        createPortal(
+          <SearchBar
+            query={search.query}
+            matchCount={search.matchCount}
+            activeIndex={search.activeIndex}
+            onQuery={search.setQuery}
+            onNext={search.next}
+            onPrev={search.prev}
+            onClose={search.closeSearch}
+          />,
+          searchHost
+        )}
     </>
   );
 }
@@ -184,6 +205,7 @@ function mount() {
   // 防御性清理：即便上一轮未设 cleanup，也不残留重复节点（= v1 的 `?.remove()`）。
   document.getElementById('mdtoc-sidebar')?.remove();
   document.getElementById('mdtoc-fab')?.remove();
+  document.getElementById('mdtoc-searchbar')?.remove();
 
   const sidebar = document.createElement('aside');
   sidebar.id = 'mdtoc-sidebar';
@@ -194,8 +216,12 @@ function mount() {
   fab.id = 'mdtoc-fab';
   document.body.appendChild(fab);
 
+  const searchbar = document.createElement('div');
+  searchbar.id = 'mdtoc-searchbar';
+  document.body.appendChild(searchbar);
+
   const root = createRoot(sidebar);
-  root.render(<App fabHost={fab} />);
+  root.render(<App fabHost={fab} searchHost={searchbar} />);
 
   w.__mdtoc_cleanup__ = () => {
     try {
@@ -205,6 +231,7 @@ function mount() {
     }
     sidebar.remove();
     fab.remove();
+    searchbar.remove();
   };
 }
 
