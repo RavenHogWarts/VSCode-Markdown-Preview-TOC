@@ -6,6 +6,19 @@
 
 ---
 
+## [1.2.0](https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC/compare/v1.1.1...v1.2.0) (2026-10-19)
+
+
+### Features
+
+* 页内搜索 ([ed2efaf](https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC/commit/ed2efafb21d263951f1919989b6ba94c8dbc045c))
+
+
+### Bug Fixes
+
+* 修复配置项不生效的问题 ([1402a27](https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC/commit/1402a2774052b4ac4c950257515ff2587fe854c8)), closes [#6](https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC/issues/6)
+* 增加 TOC 禁用态支持，修复 meta 注入失效导致的状态不可达问题 ([677fa78](https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC/commit/677fa78a3416401bd422ba053d50d24981d7e901))
+
 ## [1.1.1](https://github.com/RavenHogWarts/VSCode-Markdown-Preview-TOC/compare/v1.1.0...v1.1.1) (2026-08-04)
 
 
