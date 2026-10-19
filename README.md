@@ -6,7 +6,8 @@
 
 ![icon](media/icon.png)
 
-[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](./CHANGELOG.md)
+<!-- Version 徽标数据源 .github/version-badge.json，由 marketplace-badge workflow 每日跟随 marketplace 更新 -->
+[![Version](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/RavenHogWarts/VSCode-Markdown-Preview-TOC/master/.github/version-badge.json)](https://marketplace.visualstudio.com/items?itemName=RavenHogwarts.markdown-preview-toc)
 [![License](https://img.shields.io/badge/license-GPL--3.0--or--later-green.svg)](./LICENSE)
 [![VSCode](https://img.shields.io/badge/VSCode-1.85+-37A4CF.svg)](https://code.visualstudio.com/)
 

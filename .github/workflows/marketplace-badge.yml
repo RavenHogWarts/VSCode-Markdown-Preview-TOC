@@ -1,0 +1,75 @@
+name: Marketplace Version Badge
+
+# README 的 Version 徽标数据源维护：每日从 VS Code Marketplace 官方 gallery API
+# 查询扩展最新版本，写入 .github/version-badge.json（shields.io endpoint 徽标格式）。
+#
+# 为什么不用 shields.io 的 visual-studio-marketplace 徽标：该端点已被 shields 官方
+# retired（Microsoft 限制了第三方查询服务），badgen.net 等替代源同样 404/报错。
+# endpoint 徽标 + CI 自查官方 API 是目前唯一稳定的「跟随 marketplace 版本」方案。
+#
+# 为什么定时轮询而非挂在 release 流程后：marketplace 发布是 release-please 打
+# Release 之后的**手动**动作（见 release-please.yml，CI 只构建 vsix 附件），
+# 挂 release 会读到旧版本；每日轮询兜底，也可手动 workflow_dispatch 立即刷新。
+#
+# 注意：GitHub 会自动停用 60 天无活动的仓库的 schedule，仓库长期不活跃时需手动
+# workflow_dispatch 跑一次以恢复。
+
+on:
+  schedule:
+    - cron: "17 21 * * *" # 每日 21:17 UTC（北京时间次日 5:17），错开整点高峰
+  workflow_dispatch:
+
+permissions:
+  contents: write # 提交徽标 JSON 更新
+
+concurrency:
+  group: marketplace-badge
+  cancel-in-progress: true
+
+jobs:
+  update-badge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Query marketplace version
+        id: query
+        run: |
+          version=$(curl -sf -X POST \
+            "https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery" \
+            -H "Accept: application/json;api-version=3.0-preview.1" \
+            -H "Content-Type: application/json" \
+            -d '{"filters":[{"criteria":[{"filterType":7,"value":"RavenHogwarts.markdown-preview-toc"}],"pageNumber":1,"pageSize":1,"sortBy":0,"sortOrder":0}],"assetTypes":[],"flags":914}' \
+            | jq -r '.results[0].extensions[0].versions[0].version')
+          if [ -z "$version" ] || [ "$version" = "null" ]; then
+            echo "::error::Marketplace 查询失败：未取到版本号"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Update badge JSON (skip if unchanged)
+        env:
+          VERSION: ${{ steps.query.outputs.version }}
+        run: |
+          current=$(jq -r '.message // ""' .github/version-badge.json)
+          if [ "$VERSION" = "$current" ]; then
+            echo "版本未变化（$VERSION），跳过"
+            exit 0
+          fi
+          jq -n --arg v "$VERSION" \
+            '{schemaVersion: 1, label: "version", message: $v, color: "blue"}' \
+            > .github/version-badge.json
+
+      - name: Commit
+        env:
+          VERSION: ${{ steps.query.outputs.version }}
+        run: |
+          if git diff --quiet .github/version-badge.json; then
+            echo "无变更"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/version-badge.json
+          git commit -m "chore: 版本徽标跟随 marketplace 更新至 $VERSION [skip ci]"
+          git push
