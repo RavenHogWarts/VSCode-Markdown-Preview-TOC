@@ -592,3 +592,17 @@ body.mdtoc-right:not(.mdtoc-collapsed) #mdtoc-searchbar {
 ::highlight(mdtoc-search-active) {
   background-color: var(--vscode-editor-findMatchBackground, rgba(255, 150, 50, 0.65));
 }
+
+/* ========== 11. TOC 禁用态（markdownToc.enabled=false） ========== */
+/* meta 配置链修复后该态真正可达：需隐藏整个侧栏壳（标题/工具栏/空 nav）与 FAB，
+   正文不再让位。页内搜索与 TOC 正交，#mdtoc-searchbar 不受影响。
+   置于文件末尾：与 §5 的 body.mdtoc-collapsed #mdtoc-fab{display:block} 同特异性，靠后者胜。 */
+body.mdtoc-disabled #mdtoc-sidebar,
+body.mdtoc-disabled #mdtoc-fab {
+  display: none;
+}
+body.mdtoc-disabled .markdown-body,
+body.mdtoc-disabled > :not(#mdtoc-sidebar):not(style):not(script):not(meta):not(link) {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}

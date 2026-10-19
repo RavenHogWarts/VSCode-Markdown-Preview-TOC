@@ -106,6 +106,11 @@ function App({ fabHost, searchHost }: { fabHost: HTMLElement; searchHost: HTMLEl
   useLayoutEffect(() => {
     document.body.classList.toggle('mdtoc-collapsed', collapsed);
   }, [collapsed]);
+  // TOC 禁用态（enabled=false）：隐藏整个侧栏壳 + FAB、正文不再让位（CSS §11）。
+  // 此前 meta 注入失效时该态不可达；修复后必须真正隐藏，否则剩标题+工具栏的空壳。
+  useLayoutEffect(() => {
+    document.body.classList.toggle('mdtoc-disabled', !cfg.enabled);
+  }, [cfg.enabled]);
   // 风格 class：互斥切换（body.mdtoc-style-<name>），CSS 变体规则据此生效（02 §3.1）。
   useLayoutEffect(() => {
     for (const s of STYLE_NAMES) {

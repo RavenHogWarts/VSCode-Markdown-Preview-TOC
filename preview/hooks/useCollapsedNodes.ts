@@ -9,6 +9,10 @@
 //   Set<string>   —— 显式折叠集（用户手动 toggle 过）。localStorage 存 JSON 数组。
 //
 // 双层语义（03 §4.3）：localStorage 有值 → 用它；否则 'auto'（首次按配置）。
+// 过期作废（issue #6 后续）：存储带写入时的 autoExpandDepth 快照（{"d":N,"v":裸值}），
+// 与当前配置不一致 → 用户改过设置，回 'auto' 按新配置派生；一致 → 手动折叠记忆照常生效。
+// 没有这层，用户一旦手动折叠过，autoExpandDepth 配置就永远失效。
+// 旧版裸值（'__all__' / '["id"]'）无快照包裹 → 一次性作废回 'auto'，属预期迁移。
 // rebuild 后状态保持（03 §5.3 难题）：状态在 React state 不在 DOM，天然保持；
 // 失效 id 留在 Set 里对显隐推导无影响（deriveHidden 按当前 items 单遍推导），自然失效。
 //
@@ -29,6 +33,41 @@ const ALL_SENTINEL = '__all__';
 
 type CollapsedMode = 'auto' | 'all' | ReadonlySet<string>;
 
+/** 存储形状：d = 写入时的 autoExpandDepth，v = 裸值（'__all__' 或 JSON 数组串）。 */
+interface StoredCollapsed {
+  d?: unknown;
+  v?: unknown;
+}
+
+/** 从 localStorage 复原折叠模式；无有效记忆或配置已变 → 'auto'。 */
+function loadMode(autoExpandDepth: number): CollapsedMode {
+  const raw = lsGet(LS_KEY);
+  if (raw === null) return 'auto';
+  try {
+    const stored = JSON.parse(raw) as StoredCollapsed;
+    if (
+      stored &&
+      typeof stored.d === 'number' &&
+      typeof stored.v === 'string' &&
+      stored.d === autoExpandDepth // 配置已变 → 记忆作废，走 'auto'
+    ) {
+      if (stored.v === ALL_SENTINEL) return 'all';
+      const arr: unknown = JSON.parse(stored.v);
+      if (Array.isArray(arr)) {
+        return new Set(arr.filter((x): x is string => typeof x === 'string'));
+      }
+    }
+  } catch {
+    /* 损坏的存储值 → 当作没操作过 */
+  }
+  return 'auto';
+}
+
+/** 写入（带当前配置快照）。raw 为裸值：'__all__' 或 JSON 数组串。 */
+function saveMode(raw: string, autoExpandDepth: number): void {
+  lsSet(LS_KEY, JSON.stringify({ d: autoExpandDepth, v: raw }));
+}
+
 export interface UseCollapsedNodesResult {
   /** 当前生效的折叠父项 id 集（= 基础集 − active 祖先 overlay，供 deriveHidden / toggle 图标用）。 */
   collapsedIds: ReadonlySet<string>;
@@ -45,20 +84,7 @@ export function useCollapsedNodes(
   autoExpandDepth: number,
   activeId: string | null
 ): UseCollapsedNodesResult {
-  const [mode, setMode] = useState<CollapsedMode>(() => {
-    const raw = lsGet(LS_KEY);
-    if (raw === null) return 'auto';
-    if (raw === ALL_SENTINEL) return 'all';
-    try {
-      const arr: unknown = JSON.parse(raw);
-      if (Array.isArray(arr)) {
-        return new Set(arr.filter((x): x is string => typeof x === 'string'));
-      }
-    } catch {
-      /* 损坏的存储值 → 当作没操作过 */
-    }
-    return 'auto';
-  });
+  const [mode, setMode] = useState<CollapsedMode>(() => loadMode(autoExpandDepth));
 
   // 基础折叠集 = 用户/配置的折叠意愿（持久层）。
   // items 引用仅在标题签名变化时更新（useToc 签名短路），memo 不会空转。
@@ -94,7 +120,7 @@ export function useCollapsedNodes(
       if (isCollapsed) next.delete(id);
       else next.add(id);
       setMode(next);
-      lsSet(LS_KEY, JSON.stringify([...next]));
+      saveMode(JSON.stringify([...next]), autoExpandDepth);
       // 手动收起 overlay 链上的项：从 overlay 移除，否则减除会立刻抵消本次折叠。
       if (!isCollapsed && overlay.has(id)) {
         const o = new Set(overlay);
@@ -102,15 +128,15 @@ export function useCollapsedNodes(
         setOverlay(o);
       }
     },
-    [collapsedIds, baseCollapsedIds, overlay]
+    [collapsedIds, baseCollapsedIds, overlay, autoExpandDepth]
   );
 
   const setAllNodes = useCallback((collapse: boolean) => {
     setMode(collapse ? 'all' : new Set());
-    lsSet(LS_KEY, collapse ? ALL_SENTINEL : '[]');
+    saveMode(collapse ? ALL_SENTINEL : '[]', autoExpandDepth);
     // 「全部收起」连 active 链一起收（所见即所点）；下次 activeId 变化手风琴自动恢复。
     if (collapse) setOverlay(new Set());
-  }, []);
+  }, [autoExpandDepth]);
 
   return { collapsedIds, isAuto: mode === 'auto', toggleNode, setAllNodes };
 }
