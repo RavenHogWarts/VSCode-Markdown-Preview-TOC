@@ -5,9 +5,16 @@
 //   2. extendMarkdownIt：把 markdownToc 配置序列化进 <meta id="mdtoc-config">，
 //      供 preview/toc.js 读取。
 //
-// 注入点选 markdown-it 的 core.ruler（parse 阶段），不要覆盖 md.render ——
-// VSCode 的 markdown 引擎直接调 md.renderer.render(tokens, opts, env)，绕过
-// md.render(text)，覆盖 md.render 等于死代码（issue #6 根因）。
+// 注入方式（issue #6）：「parse 阶段塞标记 token + render 规则现生成 meta」，
+// 两个环节都不能少，也别换成单点覆盖：
+//   - 不要覆盖 md.render：VSCode 引擎直接调 md.renderer.render(tokens, opts, env)，
+//     绕过 md.render(text)，该覆盖是死代码（这正是 issue #6 的根因）。
+//   - 不要在 parse 阶段生成 meta 内容（如塞 html_block token 携带内容）：
+//     VSCode 的 TokenCache 按 (uri, version, breaks, linkify) 缓存 parse 结果，
+//     markdownToc.* 变更不命中任何失效条件，预览刷新会复用旧 token，改配置不生效。
+//     token 只做占位（与配置无关），meta 在 render 期现生成——render 不走缓存。
+//   - 也不要覆盖 md.renderer.render：共享同一 md 实例的第三方若调 md.renderInline
+//     （其内部同样经 renderer.render），会被误注入 meta。
 import * as vscode from 'vscode';
 
 /** 与 preview/toc.ts 的 MdtocConfig 保持一致。 */
@@ -35,17 +42,21 @@ export function activate(context: vscode.ExtensionContext) {
 
   return {
     extendMarkdownIt(md: any) {
-      // core.ruler 在 parse 阶段往 token 流最前面塞一个 html_block token，
-      // markdown-it 默认 html_block 渲染规则原样输出 token.content（renderer.js
-      // 的 default_rules.html_block）。对 md.render 与 VSCode 的 md.renderer.render
-      // 两条路径都生效 —— 旧的「覆盖 md.render」只对前者生效，导致 meta 永不注入
-      // 预览 DOM（issue #6）。
+      // parse 阶段：往 token 流最前面塞一个占位 token（与配置值无关，被缓存也无所谓）。
+      // 'normalize' 是 core 链首条规则，before 它即最早执行；block 解析后续 push，
+      // 本 token 恒居首位。md.renderInline 也走 core 链（inlineMode=true），
+      // 必须跳过，否则共享实例的第三方 inline 渲染被误注入 meta。
       md.core.ruler.before('normalize', 'mdtoc_config', (state: any) => {
-        const token = new state.Token('html_block', '', 0);
-        token.content = injectConfigMeta();
-        token.hidden = true; // 不进入 AST 语义层，仅作 HTML 注入
+        if (state.inlineMode) return;
+        const token = new state.Token('mdtoc_config', '', 0);
+        token.block = true;
+        // 双保险：若 render 规则被第三方删掉，未知类型会走 renderToken 兜底，
+        // hidden=true 让其返回空串，避免输出 <mdtoc_config> 伪标签。
+        token.hidden = true;
         state.tokens.unshift(token);
       });
+      // render 期：现生成 meta（render 不经 TokenCache），改配置 → preview 刷新即生效。
+      md.renderer.rules.mdtoc_config = () => injectConfigMeta();
       return md;
     },
   };
