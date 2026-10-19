@@ -1,11 +1,13 @@
 // src/extension.ts
 // 扩展宿主入口（Node 环境，可 import 'vscode'）。
-// 职责（M0 脚手架阶段）：
+// 职责：
 //   1. activate：注册 onDidChangeConfiguration，配置变化时刷新预览。
 //   2. extendMarkdownIt：把 markdownToc 配置序列化进 <meta id="mdtoc-config">，
 //      供 preview/toc.js 读取。
 //
-// 完整实现见 dev/260803/04-implementation.md §5。
+// 注入点选 markdown-it 的 core.ruler（parse 阶段），不要覆盖 md.render ——
+// VSCode 的 markdown 引擎直接调 md.renderer.render(tokens, opts, env)，绕过
+// md.render(text)，覆盖 md.render 等于死代码（issue #6 根因）。
 import * as vscode from 'vscode';
 
 /** 与 preview/toc.ts 的 MdtocConfig 保持一致。 */
@@ -33,13 +35,17 @@ export function activate(context: vscode.ExtensionContext) {
 
   return {
     extendMarkdownIt(md: any) {
-      // M0 阶段：仅注入配置 meta，不做其它 markdown-it 改造。
-      // 在最终 HTML 输出前加 <meta>，最简单可靠（见 04 §5.1）。
-      const render = md.render.bind(md);
-      md.render = (...args: any[]) => {
-        const html = render(...args);
-        return injectConfigMeta() + html;
-      };
+      // core.ruler 在 parse 阶段往 token 流最前面塞一个 html_block token，
+      // markdown-it 默认 html_block 渲染规则原样输出 token.content（renderer.js
+      // 的 default_rules.html_block）。对 md.render 与 VSCode 的 md.renderer.render
+      // 两条路径都生效 —— 旧的「覆盖 md.render」只对前者生效，导致 meta 永不注入
+      // 预览 DOM（issue #6）。
+      md.core.ruler.before('normalize', 'mdtoc_config', (state: any) => {
+        const token = new state.Token('html_block', '', 0);
+        token.content = injectConfigMeta();
+        token.hidden = true; // 不进入 AST 语义层，仅作 HTML 注入
+        state.tokens.unshift(token);
+      });
       return md;
     },
   };
